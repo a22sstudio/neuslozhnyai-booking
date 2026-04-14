@@ -61,7 +61,7 @@ if (process.env.TELEGRAM_BOT_TOKEN && GROUP_CHAT_ID) {
 // ============================================
 
 app.use(express.json());
-app.use('/miniapp', express.static(path.join(__dirname, '..', 'defo-booking-miniapp')));
+app.use('/miniapp', express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -162,19 +162,22 @@ if (bot) {
     const chatId = msg.chat.id;
     
     const helpMessage = `
-🤖 <b>Не Усложняй Admin Bot</b>
+🤖 <b>Не Усложняй | Система лояльности</b>
 
 <i>твой любимый хука спот • Брянск</i>
 
-<b>📋 Доступные команды:</b>
+<b>📋 Что здесь можно делать:</b>
+
+/app — Открыть mini app лояльности
+/help — Эта справка
+
+<b>Для команды доступны служебные команды:</b>
 
 /today — Брони на сегодня
 /tomorrow — Брони на завтра
 /stats — Статистика за день
 /awaiting — Ожидают подтверждения прихода
 /table [номер] — Брони по конкретному столу
-/app — Открыть панель управления
-/help — Эта справка
 
 <b>🔔 Автоматические уведомления:</b>
 

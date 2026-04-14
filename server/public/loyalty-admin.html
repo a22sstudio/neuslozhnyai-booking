@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Не Усложняй Loyalty Admin</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --panel: rgba(18, 18, 18, 0.96);
+            --panel-soft: rgba(255,255,255,0.04);
+            --line: rgba(255,255,255,0.09);
+            --line-strong: rgba(242,145,0,0.28);
+            --text: #fff;
+            --muted: #9a9a9a;
+            --accent: #F29100;
+            --shadow: 0 18px 50px rgba(0,0,0,0.32);
+            --brand-font: "Miratrix", "Manrope", sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Manrope", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(242,145,0,0.15), transparent 30%),
+                linear-gradient(180deg, #090909 0%, #040404 100%);
+        }
+        .shell { width: min(100%, 520px); margin: 0 auto; padding: 18px 14px 40px; }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .card + .card { margin-top: 14px; }
+        .hero, .section { padding: 18px; }
+        .hero {
+            background: radial-gradient(circle at top right, rgba(242,145,0,0.22), transparent 34%);
+        }
+        .row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .eyebrow, .muted {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        h1, h2 { margin: 0; }
+        h1 {
+            margin-top: 4px;
+            color: var(--accent);
+            font-family: var(--brand-font);
+            font-size: 32px;
+            line-height: 0.95;
+            font-weight: 500;
+        }
+        .tagline { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+        .copy, .note { margin-top: 14px; font-size: 14px; line-height: 1.55; color: rgba(255,255,255,0.88); }
+        .note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+        .pill {
+            min-width: 108px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px 12px;
+            text-align: right;
+        }
+        .pill strong { display: block; color: var(--accent); }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+        .stat, .search-box, .guest-card, .log-item, .empty {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel-soft);
+        }
+        .stat { padding: 12px; }
+        .stat .label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+        .stat .value { margin-top: 8px; font-size: 24px; color: var(--accent); font-weight: 800; line-height: 1; }
+        .input, .select, .textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            font: inherit;
+            outline: none;
+        }
+        .textarea { min-height: 92px; resize: vertical; }
+        .search-box { padding: 12px; }
+        .filters, .form-grid, .guest-list, .log-list { display: grid; gap: 10px; }
+        .filters {
+            margin-top: 10px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .filter {
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+            color: var(--muted);
+            border-radius: 14px;
+            padding: 10px 12px;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .filter.active {
+            background: linear-gradient(135deg, var(--accent), #ffb347);
+            color: #111;
+            border-color: transparent;
+        }
+        .guest-list, .log-list { margin-top: 14px; }
+        .guest-card, .log-item { padding: 14px; }
+        .guest-name { font-size: 18px; font-weight: 800; }
+        .guest-meta { margin-top: 6px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+        .progress-rail { margin-top: 12px; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #ffb347 0%, var(--accent) 100%); }
+        .actions { margin-top: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .btn {
+            border: none;
+            border-radius: 16px;
+            padding: 13px 14px;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), #ffb347); color: #111; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--line); }
+        .field { margin-top: 12px; }
+        .field label { display: block; margin-bottom: 8px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+        .hidden { display: none !important; }
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+        }
+        .modal.show { display: flex; }
+        .modal-card {
+            width: min(100%, 420px);
+            background: rgba(12,12,12,0.98);
+            border: 1px solid rgba(242,145,0,0.24);
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 16px;
+            transform: translateX(-50%) translateY(-120%);
+            width: min(440px, calc(100% - 24px));
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(242,145,0,0.35);
+            background: rgba(17,17,17,0.98);
+            transition: transform 0.25s ease;
+            box-shadow: var(--shadow);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast strong { display: block; margin-bottom: 6px; }
+        .toast span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <main class="shell">
+        <section class="card hero">
+            <div class="row">
+                <div>
+                    <div class="eyebrow">Служебный mini app</div>
+                    <h1>Не Усложняй</h1>
+                    <div class="tagline">loyalty admin</div>
+                </div>
+                <div class="pill">
+                    <strong id="adminLabel">Админ</strong>
+                    <span class="muted">доступ по Telegram</span>
+                </div>
+            </div>
+            <p class="copy">Здесь админ делает только то, что действительно нужно в жизни: находит гостя, подтверждает визит, а затем при необходимости списывает выбранную награду. Без лишней ручной активации.</p>
+            <div class="stats hidden" id="statsBlock">
+                <div class="stat">
+                    <div class="label">Гостей</div>
+                    <div class="value" id="guestCount">0</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Rewards</div>
+                    <div class="value" id="rewardCount">0</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Логов</div>
+                    <div class="value" id="logCount">0</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card section hidden" id="accessDenied">
+            <h2>Нет доступа</h2>
+            <div class="note">Этот экран доступен только администраторам, которых система узнала по Telegram ID, username или номеру телефона из allowlist.</div>
+        </section>
+
+        <section class="card section hidden" id="adminApp">
+            <h2>Поиск и база</h2>
+            <div class="note">Гость может назваться по имени, номеру или последним 4 цифрам телефона.</div>
+            <div class="search-box">
+                <input id="searchInput" class="input" placeholder="Имя, телефон или последние 4 цифры">
+                <div class="filters">
+                    <button class="filter active" data-filter="all">Все</button>
+                    <button class="filter" data-filter="reward">С наградой</button>
+                    <button class="filter" data-filter="inactive">Риск downgrade</button>
+                    <button class="filter" data-filter="day">Дневной фокус</button>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="newGuestName">Новый гость</label>
+                    <input id="newGuestName" class="input" placeholder="Имя гостя">
+                </div>
+                <div class="field">
+                    <label for="newGuestPhone">Телефон</label>
+                    <input id="newGuestPhone" class="input" placeholder="+7 999 123 45 67">
+                </div>
+                <button class="btn btn-secondary" id="createGuestButton">Создать карточку гостя</button>
+            </div>
+
+            <div class="guest-list" id="guestList"></div>
+        </section>
+
+        <section class="card section hidden" id="logsCard">
+            <h2>Журнал действий</h2>
+            <div class="note">Основа audit trail для ручной работы смены.</div>
+            <div class="log-list" id="logList"></div>
+        </section>
+    </main>
+
+    <div class="modal" id="modal">
+        <div class="modal-card">
+            <h2 id="modalTitle">Подтвердить визит</h2>
+            <div class="note" id="modalNote"></div>
+            <div class="field">
+                <label for="checkAmount">Сумма чека</label>
+                <input id="checkAmount" class="input" type="number" min="0" step="100" placeholder="Например, 3200">
+            </div>
+            <div class="field hidden" id="commentWrap">
+                <label for="modalComment">Комментарий</label>
+                <textarea id="modalComment" class="textarea" placeholder="При необходимости добавь заметку для истории"></textarea>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" id="cancelButton">Отмена</button>
+                <button class="btn btn-primary" id="confirmButton">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            tg.setHeaderColor('#050505');
+            tg.setBackgroundColor('#050505');
+        }
+
+        const API_BASE = `${window.location.origin}/api/loyalty`;
+        let session = null;
+        let guests = [];
+        let logs = [];
+        let currentFilter = 'all';
+        let currentAction = null;
+        let activeGuestId = null;
+
+        function demoHeaders() {
+            const params = new URLSearchParams(window.location.search);
+            const demoUserId = params.get('demo_user_id');
+            if (!demoUserId) return {};
+            return {
+                'X-Demo-Telegram-Id': demoUserId,
+                'X-Demo-Telegram-Username': params.get('demo_username') || 'admin_demo',
+                'X-Demo-First-Name': params.get('demo_first_name') || 'Demo',
+                'X-Demo-Last-Name': params.get('demo_last_name') || 'Admin'
+            };
+        }
+
+        function authHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                ...(tg?.initData ? { 'X-Telegram-Init-Data': tg.initData } : demoHeaders())
+            };
+        }
+
+        async function api(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...authHeaders(),
+                    ...(options.headers || {})
+                }
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка запроса');
+            }
+            return data;
+        }
+
+        function showToast(title, text) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
+            toast.classList.add('show');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        async function loadSession() {
+            session = await api(`${API_BASE}/session`);
+            document.getElementById('adminLabel').textContent = session.telegramUser.first_name || 'Админ';
+
+            if (!session.isAdmin) {
+                document.getElementById('accessDenied').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('adminApp').classList.remove('hidden');
+            document.getElementById('logsCard').classList.remove('hidden');
+            document.getElementById('statsBlock').classList.remove('hidden');
+            await Promise.all([loadGuests(), loadLogs()]);
+        }
+
+        async function loadGuests() {
+            const q = document.getElementById('searchInput').value.trim();
+            const data = await api(`${API_BASE}/admin/guests?q=${encodeURIComponent(q)}&filter=${encodeURIComponent(currentFilter)}`);
+            guests = data.guests;
+            renderGuests();
+            renderStats();
+        }
+
+        async function loadLogs() {
+            const data = await api(`${API_BASE}/admin/logs`);
+            logs = data.logs;
+            renderLogs();
+            renderStats();
+        }
+
+        function renderStats() {
+            document.getElementById('guestCount').textContent = guests.length;
+            document.getElementById('rewardCount').textContent = guests.filter(guest => guest.reward).length;
+            document.getElementById('logCount').textContent = logs.length;
+        }
+
+        function renderGuests() {
+            const guestList = document.getElementById('guestList');
+            if (!guests.length) {
+                guestList.innerHTML = '<div class="empty" style="padding:24px;text-align:center;color:#9a9a9a;">Ничего не найдено. Проверь запрос или создай карточку гостя ниже.</div>';
+                return;
+            }
+
+            guestList.innerHTML = guests.map(guest => `
+                <div class="guest-card">
+                    <div class="row">
+                        <div>
+                            <div class="guest-name">${guest.displayName}</div>
+                            <div class="guest-meta">${guest.phone} • последние 4: ${guest.phoneLast4}</div>
+                        </div>
+                        <div class="pill">
+                            <strong>${guest.level.title}</strong>
+                            <span class="muted">${guest.totalVisits} визитов</span>
+                        </div>
+                    </div>
+                    <div class="guest-meta">${guest.currentStamps}/6 штампов • средний чек ${Math.round(guest.averageCheck).toLocaleString('ru-RU')} ₽ • ${guest.inactiveDays} дней без визита</div>
+                    <div class="progress-rail"><div class="progress-fill" style="width:${Math.min(guest.currentStamps, 6) / 6 * 100}%"></div></div>
+                    <div class="guest-meta">
+                        ${guest.reward
+                            ? (guest.reward.status === 'selected'
+                                ? `Готова к списанию: ${guest.reward.selectedRewardTitle}`
+                                : 'Награда открыта, гость ещё выбирает reward')
+                            : 'Открытой награды сейчас нет'}
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="openVisitModal(${guest.id})">Подтвердить визит</button>
+                        ${guest.reward && guest.reward.status === 'selected'
+                            ? `<button class="btn btn-secondary" onclick="redeemReward(${guest.reward.id})">Списать награду</button>`
+                            : `<button class="btn btn-secondary" onclick="showToast('Нечего списывать', 'Сначала гость должен дойти до награды и выбрать её в своём mini app.')">Reward недоступен</button>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLogs() {
+            document.getElementById('logList').innerHTML = logs.slice(0, 12).map(log => `
+                <div class="log-item">
+                    <strong>${log.summary}</strong>
+                    <div class="note">${new Date(log.createdAt).toLocaleString('ru-RU')}</div>
+                </div>
+            `).join('');
+        }
+
+        function openVisitModal(guestId) {
+            currentAction = 'visit';
+            activeGuestId = guestId;
+            document.getElementById('modalTitle').textContent = 'Подтвердить визит';
+            document.getElementById('modalNote').textContent = 'Чек до 4 999 ₽ даст 1 штамп. Чек от 5 000 ₽ даст 2 штампа автоматически.';
+            document.getElementById('checkAmount').value = '';
+            document.getElementById('modalComment').value = '';
+            document.getElementById('commentWrap').classList.remove('hidden');
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+            currentAction = null;
+            activeGuestId = null;
+        }
+
+        async function confirmModal() {
+            if (currentAction !== 'visit' || !activeGuestId) return;
+            const checkAmount = Number(document.getElementById('checkAmount').value || 0);
+            const comment = document.getElementById('modalComment').value.trim();
+            await api(`${API_BASE}/admin/visits`, {
+                method: 'POST',
+                body: JSON.stringify({ guestId: activeGuestId, checkAmount, comment })
+            });
+            showToast('Визит подтверждён', 'Штампы начислены автоматически по сумме чека, а награда откроется сама при 6/6.');
+            closeModal();
+            await Promise.all([loadGuests(), loadLogs()]);
+        }
+
+        async function redeemReward(rewardId) {
+            await api(`${API_BASE}/admin/rewards/${rewardId}/redeem`, {
+                method: 'POST',
+                body: JSON.stringify({ comment: 'Списано администратором на месте' })
+            });
+            showToast('Награда списана', 'Гость снова может собирать следующую награду.');
+            await Promise.all([loadGuests(), loadLogs()]);
+        }
+
+        async function createGuest() {
+            const displayName = document.getElementById('newGuestName').value.trim();
+            const phone = document.getElementById('newGuestPhone').value.trim();
+            if (!displayName || !phone) {
+                showToast('Не хватает данных', 'Для карточки гостя нужны хотя бы имя и номер телефона.');
+                return;
+            }
+            await api(`${API_BASE}/admin/guests`, {
+                method: 'POST',
+                body: JSON.stringify({ displayName, phone })
+            });
+            document.getElementById('newGuestName').value = '';
+            document.getElementById('newGuestPhone').value = '';
+            showToast('Карточка готова', 'Теперь этого гостя можно искать и подтверждать ему визиты.');
+            await Promise.all([loadGuests(), loadLogs()]);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', loadGuests);
+        document.querySelectorAll('[data-filter]').forEach(button => {
+            button.addEventListener('click', async () => {
+                document.querySelectorAll('[data-filter]').forEach(node => node.classList.remove('active'));
+                button.classList.add('active');
+                currentFilter = button.dataset.filter;
+                await loadGuests();
+            });
+        });
+        document.getElementById('createGuestButton').addEventListener('click', createGuest);
+        document.getElementById('cancelButton').addEventListener('click', closeModal);
+        document.getElementById('confirmButton').addEventListener('click', confirmModal);
+        document.getElementById('modal').addEventListener('click', event => {
+            if (event.target.id === 'modal') closeModal();
+        });
+
+        loadSession().catch(error => {
+            showToast('Не удалось открыть админку', error.message);
+        });
+
+        window.openVisitModal = openVisitModal;
+        window.redeemReward = redeemReward;
+        window.showToast = showToast;
+    </script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Не Усложняй Club</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --panel: rgba(18, 18, 18, 0.96);
+            --panel-soft: rgba(255, 255, 255, 0.04);
+            --line: rgba(255, 255, 255, 0.09);
+            --line-strong: rgba(242, 145, 0, 0.28);
+            --text: #fff;
+            --muted: #9a9a9a;
+            --accent: #F29100;
+            --shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+            --brand-font: "Miratrix", "Manrope", sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Manrope", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(242,145,0,0.15), transparent 30%),
+                linear-gradient(180deg, #090909 0%, #040404 100%);
+        }
+        .shell {
+            width: min(100%, 480px);
+            margin: 0 auto;
+            padding: 18px 14px 40px;
+        }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .card + .card { margin-top: 14px; }
+        .hero { padding: 20px; background: radial-gradient(circle at top right, rgba(242,145,0,0.22), transparent 34%); }
+        .brand {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .brand h1 {
+            margin: 4px 0 2px;
+            color: var(--accent);
+            font-family: var(--brand-font);
+            font-size: 32px;
+            line-height: 0.95;
+            font-weight: 500;
+        }
+        .eyebrow, .small-note {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .tagline, .copy, .muted {
+            color: rgba(255,255,255,0.88);
+            line-height: 1.55;
+        }
+        .tagline { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+        .copy { margin: 16px 0 0; font-size: 14px; }
+        .section { padding: 18px; }
+        .section-title { margin: 0; font-size: 20px; font-weight: 800; }
+        .section-note { margin-top: 4px; font-size: 12px; color: var(--muted); }
+        .steps, .perks, .reward-list { display: grid; gap: 10px; margin-top: 14px; }
+        .step, .perk, .reward-option {
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel-soft);
+        }
+        .step strong, .perk strong, .reward-option strong { display: block; font-size: 14px; }
+        .step span, .perk span, .reward-option span { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+        .field { margin-top: 14px; }
+        .field label { display: block; margin-bottom: 8px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+        .input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            font: inherit;
+            outline: none;
+        }
+        .btn {
+            border: none;
+            border-radius: 16px;
+            padding: 14px 16px;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), #ffb347); color: #111; width: 100%; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--line); width: 100%; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+        .stat {
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+        }
+        .stat .label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+        .stat .value { margin-top: 8px; font-size: 24px; color: var(--accent); font-weight: 800; line-height: 1; }
+        .progress-rail { margin-top: 12px; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #ffb347 0%, var(--accent) 100%); }
+        .stamps { margin-top: 14px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .stamp {
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.25);
+        }
+        .stamp.active {
+            background: rgba(242,145,0,0.14);
+            border-color: var(--line-strong);
+            color: #fff0d7;
+        }
+        .pill {
+            min-width: 112px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px 12px;
+            text-align: right;
+        }
+        .pill strong { display: block; color: var(--accent); }
+        .reward-option.selected {
+            border-color: var(--line-strong);
+            background: rgba(242,145,0,0.12);
+        }
+        .hidden { display: none !important; }
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 16px;
+            transform: translateX(-50%) translateY(-120%);
+            width: min(440px, calc(100% - 24px));
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(242,145,0,0.35);
+            background: rgba(17,17,17,0.98);
+            box-shadow: var(--shadow);
+            transition: transform 0.25s ease;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast strong { display: block; margin-bottom: 6px; }
+        .toast span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <main class="shell">
+        <section class="card hero">
+            <div class="brand">
+                <div>
+                    <div class="eyebrow">Telegram mini app</div>
+                    <h1>Не Усложняй</h1>
+                    <div class="tagline">club для своих</div>
+                </div>
+                <div class="pill">
+                    <strong id="heroLevel">Гость</strong>
+                    <span class="small-note" id="heroLevelNote">ещё немного до next</span>
+                </div>
+            </div>
+            <p class="copy">Лояльность здесь устроена просто: админ подтверждает твой визит вручную, ты получаешь штампы, открываешь награды и качаешь уровень клуба. Чем выше уровень, тем сильнее reward pool и привилегии.</p>
+            <div class="stats hidden" id="statsBlock">
+                <div class="stat">
+                    <div class="label">Штампы</div>
+                    <div class="value" id="stampCounter">0/6</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Визиты</div>
+                    <div class="value" id="visitsCounter">0</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Средний чек</div>
+                    <div class="value" id="averageCheck">0₽</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card section">
+            <h2 class="section-title">Как это работает</h2>
+            <div class="section-note">Сразу объясняем механику, чтобы гость не терялся.</div>
+            <div class="steps">
+                <div class="step">
+                    <strong>1. Заходишь в клуб</strong>
+                    <span>Оставляешь имя и номер телефона. Дальше система узнаёт тебя через Telegram и номер.</span>
+                </div>
+                <div class="step">
+                    <strong>2. Получаешь штампы</strong>
+                    <span>Каждый подтверждённый визит с покупкой даёт 1 штамп. Чек от 5 000 ₽ даёт 2 штампа.</span>
+                </div>
+                <div class="step">
+                    <strong>3. Открываешь награду</strong>
+                    <span>На 6/6 штампов награда открывается автоматически. Ты сам выбираешь её в mini app, админ только списывает на месте.</span>
+                </div>
+                <div class="step">
+                    <strong>4. Качаешь уровень</strong>
+                    <span>Чем выше уровень, тем сильнее привилегии и интереснее reward pool.</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card section" id="registrationCard">
+            <h2 class="section-title">Вступить в клуб</h2>
+            <div class="section-note">После регистрации все визиты и награды будут привязаны к твоему Telegram и номеру телефона.</div>
+            <div class="field">
+                <label for="displayName">Как тебя зовут</label>
+                <input id="displayName" class="input" placeholder="Например, Максим">
+            </div>
+            <div class="field">
+                <label for="phoneInput">Телефон</label>
+                <input id="phoneInput" class="input" placeholder="+7 999 123 45 67">
+            </div>
+            <div class="field">
+                <button class="btn btn-primary" id="registerButton">Вступить в клуб</button>
+            </div>
+        </section>
+
+        <section class="card section hidden" id="dashboardCard">
+            <h2 class="section-title">Твой прогресс</h2>
+            <div class="section-note" id="progressNote"></div>
+            <div class="progress-rail"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+            <div class="stamps" id="stampGrid"></div>
+        </section>
+
+        <section class="card section hidden" id="rewardCard">
+            <h2 class="section-title">Твоя награда</h2>
+            <div class="section-note" id="rewardNote"></div>
+            <div class="reward-list" id="rewardList"></div>
+            <div class="field hidden" id="rewardButtonWrap">
+                <button class="btn btn-primary" id="selectRewardButton">Подтвердить выбор награды</button>
+            </div>
+        </section>
+
+        <section class="card section hidden" id="perksCard">
+            <h2 class="section-title">Что даёт твой уровень</h2>
+            <div class="section-note">Здесь видно, почему уровень реально важен, а не просто висит бейджем.</div>
+            <div class="perks" id="perkList"></div>
+        </section>
+    </main>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            tg.setHeaderColor('#050505');
+            tg.setBackgroundColor('#050505');
+        }
+
+        const API_BASE = `${window.location.origin}/api/loyalty`;
+        let session = null;
+        let guestState = null;
+        let selectedRewardId = null;
+
+        function demoHeaders() {
+            const params = new URLSearchParams(window.location.search);
+            const demoUserId = params.get('demo_user_id');
+            if (!demoUserId) return {};
+            return {
+                'X-Demo-Telegram-Id': demoUserId,
+                'X-Demo-Telegram-Username': params.get('demo_username') || 'guest_demo',
+                'X-Demo-First-Name': params.get('demo_first_name') || 'Demo',
+                'X-Demo-Last-Name': params.get('demo_last_name') || 'Guest'
+            };
+        }
+
+        function authHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                ...(tg?.initData ? { 'X-Telegram-Init-Data': tg.initData } : demoHeaders())
+            };
+        }
+
+        async function api(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...authHeaders(),
+                    ...(options.headers || {})
+                }
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка запроса');
+            }
+            return data;
+        }
+
+        function showToast(title, text) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
+            toast.classList.add('show');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function renderGuest() {
+            if (!guestState) return;
+
+            document.getElementById('statsBlock').classList.remove('hidden');
+            document.getElementById('registrationCard').classList.add('hidden');
+            document.getElementById('dashboardCard').classList.remove('hidden');
+            document.getElementById('rewardCard').classList.remove('hidden');
+            document.getElementById('perksCard').classList.remove('hidden');
+
+            document.getElementById('heroLevel').textContent = guestState.level.title;
+            document.getElementById('heroLevelNote').textContent = guestState.nextLevel
+                ? `ещё ${guestState.nextLevel.minVisits - guestState.totalVisits} виз. до "${guestState.nextLevel.title}"`
+                : 'максимальный уровень открыт';
+
+            document.getElementById('stampCounter').textContent = `${guestState.currentStamps}/6`;
+            document.getElementById('visitsCounter').textContent = guestState.totalVisits;
+            document.getElementById('averageCheck').textContent = `${Math.round(guestState.averageCheck).toLocaleString('ru-RU')}₽`;
+            document.getElementById('progressFill').style.width = `${Math.min(guestState.currentStamps, 6) / 6 * 100}%`;
+            document.getElementById('progressNote').textContent = guestState.reward
+                ? 'Награда уже открыта. Сначала используй её, потом снова собирай следующую.'
+                : `До следующей награды осталось ${6 - guestState.currentStamps} штамп(а/ов).`;
+
+            document.getElementById('stampGrid').innerHTML = Array.from({ length: 6 }, (_, index) => `
+                <div class="stamp ${index < guestState.currentStamps ? 'active' : ''}">${index < guestState.currentStamps ? '✦' : '•'}</div>
+            `).join('');
+
+            document.getElementById('perkList').innerHTML = guestState.level.perks.map(perk => `
+                <div class="perk">
+                    <strong>${guestState.level.title}</strong>
+                    <span>${perk}</span>
+                </div>
+            `).join('');
+
+            renderRewards();
+        }
+
+        function renderRewards() {
+            const rewardList = document.getElementById('rewardList');
+            const rewardNote = document.getElementById('rewardNote');
+            const buttonWrap = document.getElementById('rewardButtonWrap');
+            const activeReward = guestState.reward;
+
+            if (!activeReward) {
+                rewardNote.textContent = 'Когда дойдёшь до 6/6 штампов, награда откроется автоматически. Её не нужно вручную активировать у админа.';
+                rewardList.innerHTML = guestState.rewardPool.map(reward => `
+                    <div class="reward-option">
+                        <strong>${reward.title}</strong>
+                        <span>${reward.description}</span>
+                    </div>
+                `).join('');
+                buttonWrap.classList.add('hidden');
+                return;
+            }
+
+            if (activeReward.status === 'available') {
+                rewardNote.textContent = 'Награда уже открыта. Выбери один вариант, а админ потом просто спишет его на месте.';
+                rewardList.innerHTML = guestState.rewardPool.map(reward => `
+                    <div class="reward-option ${selectedRewardId === reward.id ? 'selected' : ''}" data-reward-id="${reward.id}">
+                        <strong>${reward.title}</strong>
+                        <span>${reward.description}</span>
+                    </div>
+                `).join('');
+                buttonWrap.classList.remove('hidden');
+                document.querySelectorAll('[data-reward-id]').forEach(node => {
+                    node.addEventListener('click', () => {
+                        selectedRewardId = Number(node.dataset.rewardId);
+                        renderRewards();
+                    });
+                });
+                return;
+            }
+
+            rewardNote.textContent = 'Награда уже выбрана. На месте просто назови номер телефона, и админ её спишет.';
+            rewardList.innerHTML = `
+                <div class="reward-option selected">
+                    <strong>${activeReward.selectedRewardTitle}</strong>
+                    <span>Награда выбрана и ждёт использования. Срок жизни награды — 14 дней.</span>
+                </div>
+            `;
+            buttonWrap.classList.add('hidden');
+        }
+
+        async function loadSession() {
+            session = await api(`${API_BASE}/session`);
+            if (!session.guestRegistered) {
+                document.getElementById('displayName').value = session.telegramUser.first_name || '';
+                return;
+            }
+            await loadGuest();
+        }
+
+        async function loadGuest() {
+            const data = await api(`${API_BASE}/guest/me`);
+            guestState = data.guest;
+            selectedRewardId = null;
+            renderGuest();
+        }
+
+        async function registerGuest() {
+            const displayName = document.getElementById('displayName').value.trim();
+            const phone = document.getElementById('phoneInput').value.trim();
+            if (!displayName || !phone) {
+                showToast('Нужно заполнить данные', 'Без имени и номера телефона мы не сможем корректно привязать визиты и награды.');
+                return;
+            }
+            await api(`${API_BASE}/guest/register`, {
+                method: 'POST',
+                body: JSON.stringify({ displayName, phone })
+            });
+            showToast('Ты в клубе', 'Регистрация завершена. Теперь все визиты и rewards будут на твоей стороне в одном экране.');
+            await loadGuest();
+        }
+
+        async function selectReward() {
+            if (!guestState?.reward?.id || !selectedRewardId) {
+                showToast('Выбери награду', 'Сначала выбери один из вариантов reward pool своего уровня.');
+                return;
+            }
+            await api(`${API_BASE}/guest/rewards/${guestState.reward.id}/select`, {
+                method: 'POST',
+                body: JSON.stringify({ rewardCatalogId: selectedRewardId })
+            });
+            showToast('Награда выбрана', 'Отлично. Теперь админ просто спишет её на месте без лишних подтверждений.');
+            await loadGuest();
+        }
+
+        document.getElementById('registerButton').addEventListener('click', registerGuest);
+        document.getElementById('selectRewardButton').addEventListener('click', selectReward);
+
+        loadSession().catch(error => {
+            showToast('Не удалось открыть клуб', error.message);
+        });
+    </script>
+</body>
+</html>
