@@ -118,7 +118,8 @@ function verifyTelegramInitData(initData, botToken) {
 }
 
 function getDemoTelegramUser(req) {
-  if (process.env.NODE_ENV === 'production') return null;
+  const allowDemoInProduction = process.env.LOYALTY_ALLOW_DEMO === 'true';
+  if (process.env.NODE_ENV === 'production' && !allowDemoInProduction) return null;
 
   const demoId = req.headers['x-demo-telegram-id'] || req.query.demo_user_id;
   if (!demoId) return null;
@@ -279,6 +280,11 @@ async function requireAdmin(req, res, pool) {
 }
 
 function registerLoyaltyRoutes(app, pool) {
+  app.use('/api/loyalty', (req, res, next) => {
+    console.log(`🟠 Loyalty request: ${req.method} ${req.path}`);
+    next();
+  });
+
   app.get('/api/loyalty/session', async (req, res) => {
     try {
       const requester = await resolveRequester(req, pool);
@@ -386,7 +392,15 @@ function registerLoyaltyRoutes(app, pool) {
       res.json({ guest: formatGuestPayload(guest, null, rewardPool) });
     } catch (error) {
       console.error('❌ Loyalty register error:', error);
-      res.status(500).json({ error: 'Ошибка регистрации в программе лояльности' });
+      console.error('❌ Loyalty register payload:', {
+        displayName: req.body?.displayName,
+        phone: req.body?.phone
+      });
+      res.status(500).json({
+        error: process.env.LOYALTY_DEBUG === 'true'
+          ? `Ошибка регистрации: ${error.message}`
+          : 'Ошибка регистрации в программе лояльности'
+      });
     }
   });
 
