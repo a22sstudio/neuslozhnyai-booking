@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const { Pool } = require('pg');
 const TelegramBot = require('node-telegram-bot-api');
+const { registerLoyaltyRoutes } = require('./loyalty');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -59,11 +61,12 @@ if (process.env.TELEGRAM_BOT_TOKEN && GROUP_CHAT_ID) {
 // ============================================
 
 app.use(express.json());
+app.use('/miniapp', express.static(path.join(__dirname, '..', 'defo-booking-miniapp')));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Telegram-Init-Data, X-Demo-Telegram-Id, X-Demo-Telegram-Username, X-Demo-First-Name, X-Demo-Last-Name');
   
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -98,6 +101,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
+
+registerLoyaltyRoutes(app, pool);
 
 // ============================================
 // TELEGRAM HELPER FUNCTIONS
@@ -726,6 +731,37 @@ pool.connect(async (err, client, release) => {
       
     } catch (alterError) {
       console.warn('⚠️ Ошибка добавления полей:', alterError.message);
+    }
+
+    // ============================================
+    // 3.2. СОВМЕСТИМОСТЬ СО СТАРОЙ СХЕМОЙ BOOKINGS
+    // ============================================
+    try {
+      console.log('🔧 Приведение bookings к новой схеме времени...');
+      
+      await client.query(`
+        ALTER TABLE bookings
+        ADD COLUMN IF NOT EXISTS start_time TIME,
+        ADD COLUMN IF NOT EXISTS end_time TIME
+      `);
+
+      await client.query(`
+        UPDATE bookings
+        SET start_time = booking_time
+        WHERE start_time IS NULL
+          AND booking_time IS NOT NULL
+      `);
+
+      await client.query(`
+        UPDATE bookings
+        SET end_time = (booking_time + (COALESCE(duration, 120) || ' minutes')::INTERVAL)::TIME
+        WHERE end_time IS NULL
+          AND booking_time IS NOT NULL
+      `);
+
+      console.log('✅ Поля start_time и end_time готовы');
+    } catch (timeSchemaError) {
+      console.warn('⚠️ Ошибка приведения схемы bookings:', timeSchemaError.message);
     }
 
     // ============================================

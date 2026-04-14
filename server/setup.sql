@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   table_id INTEGER REFERENCES tables(id),
   hall_id INTEGER REFERENCES halls(id),
   booking_date DATE NOT NULL,
-  booking_time TIME NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME,
   duration INTEGER DEFAULT 120,
   customer_name VARCHAR(100) NOT NULL,
   customer_phone VARCHAR(20) NOT NULL,
@@ -129,3 +130,115 @@ WHERE NOT EXISTS (SELECT 1 FROM tables WHERE table_number = '6');
 INSERT INTO tables (hall_id, table_number, public_label, capacity, min_capacity, furniture_description, features, has_playstation, position_x, position_y, width, height, shape) 
 SELECT 1, '7', 'Четырехместный стол', 4, 2, 'Два двухместных дивана', 'Зона рядом с баром', false, 660, 165, 165, 90, 'sofa-double'
 WHERE NOT EXISTS (SELECT 1 FROM tables WHERE table_number = '7');
+
+-- ============================================
+-- LOYALTY MVP
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS loyalty_admins (
+  id SERIAL PRIMARY KEY,
+  telegram_user_id BIGINT UNIQUE,
+  telegram_username VARCHAR(100),
+  phone_last4 VARCHAR(4),
+  full_name VARCHAR(120) NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_guests (
+  id SERIAL PRIMARY KEY,
+  telegram_user_id BIGINT UNIQUE,
+  telegram_username VARCHAR(100),
+  first_name VARCHAR(120),
+  last_name VARCHAR(120),
+  display_name VARCHAR(120) NOT NULL,
+  phone VARCHAR(20) NOT NULL UNIQUE,
+  phone_last4 VARCHAR(4) NOT NULL,
+  total_visits INTEGER DEFAULT 0,
+  current_stamps INTEGER DEFAULT 0,
+  level_code VARCHAR(20) DEFAULT 'guest',
+  average_check DECIMAL(10,2) DEFAULT 0,
+  last_visit_at TIMESTAMP,
+  last_seen_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_reward_catalog (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  title VARCHAR(150) NOT NULL,
+  description TEXT,
+  min_level_code VARCHAR(20) NOT NULL DEFAULT 'guest',
+  is_active BOOLEAN DEFAULT true,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_reward_instances (
+  id SERIAL PRIMARY KEY,
+  guest_id INTEGER NOT NULL REFERENCES loyalty_guests(id) ON DELETE CASCADE,
+  reward_catalog_id INTEGER REFERENCES loyalty_reward_catalog(id),
+  status VARCHAR(20) NOT NULL DEFAULT 'available',
+  opened_at TIMESTAMP DEFAULT NOW(),
+  selected_at TIMESTAMP,
+  redeemed_at TIMESTAMP,
+  expires_at TIMESTAMP NOT NULL,
+  opened_after_visit_id INTEGER,
+  selected_by_guest BOOLEAN DEFAULT false,
+  admin_comment TEXT
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_visits (
+  id SERIAL PRIMARY KEY,
+  guest_id INTEGER NOT NULL REFERENCES loyalty_guests(id) ON DELETE CASCADE,
+  confirmed_by_admin_id INTEGER REFERENCES loyalty_admins(id),
+  check_amount DECIMAL(10,2) DEFAULT 0,
+  stamps_awarded INTEGER NOT NULL DEFAULT 1,
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_audit_log (
+  id SERIAL PRIMARY KEY,
+  guest_id INTEGER REFERENCES loyalty_guests(id) ON DELETE SET NULL,
+  admin_id INTEGER REFERENCES loyalty_admins(id) ON DELETE SET NULL,
+  action_type VARCHAR(50) NOT NULL,
+  action_summary TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_loyalty_guests_phone_last4 ON loyalty_guests(phone_last4);
+CREATE INDEX IF NOT EXISTS idx_loyalty_guests_level_code ON loyalty_guests(level_code);
+CREATE INDEX IF NOT EXISTS idx_loyalty_reward_instances_guest_status ON loyalty_reward_instances(guest_id, status);
+CREATE INDEX IF NOT EXISTS idx_loyalty_visits_guest_id ON loyalty_visits(guest_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_audit_guest_id ON loyalty_audit_log(guest_id);
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'welcome_boost', 'Welcome-бонус клуба', 'Базовый reward для старта в системе лояльности.', 'guest', 1
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'welcome_boost');
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'express_hookah', 'Экспресс кальян на электронной чаше Хука Про', 'Флагманская MVP-награда с сильной эмоцией и понятной себестоимостью.', 'svoy', 2
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'express_hookah');
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'double_day', 'Двойной штамп на следующий дневной визит', 'Награда для загрузки спокойных часов и быстрого возврата.', 'svoy', 3
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'double_day');
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'personal_offer', 'Персональная цена на выбранную позицию', 'Точечная скидка без ощущения массовой акции.', 'svoy', 4
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'personal_offer');
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'daytime_special', 'Дневной special для своих', 'Закрытый reward для гостей, которых важно привести в дневные часы.', 'circle', 5
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'daytime_special');
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'secret_position', 'Секретная позиция недели', 'Reward уровня клуба "В кругу" и выше.', 'circle', 6
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'secret_position');
+
+INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
+SELECT 'legend_surprise', 'Сюрприз от команды', 'Редкая статусная награда только для уровня "Легенда".', 'legend', 7
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'legend_surprise');
