@@ -394,55 +394,86 @@
         }
 
         async function loadSession() {
-            session = await api(`${API_BASE}/session`);
-            if (!session.guestRegistered) {
-                document.getElementById('displayName').value = session.telegramUser.first_name || '';
-                return;
+            try {
+                session = await api(`${API_BASE}/session`);
+                if (!session.guestRegistered) {
+                    document.getElementById('displayName').value = session.telegramUser.first_name || '';
+                    return;
+                }
+                await loadGuest();
+            } catch (error) {
+                showToast('Не удалось открыть клуб', error.message);
             }
-            await loadGuest();
         }
 
         async function loadGuest() {
-            const data = await api(`${API_BASE}/guest/me`);
-            guestState = data.guest;
-            selectedRewardId = null;
-            renderGuest();
+            try {
+                const data = await api(`${API_BASE}/guest/me`);
+                guestState = data.guest;
+                selectedRewardId = null;
+                renderGuest();
+            } catch (error) {
+                showToast('Не удалось загрузить профиль', error.message);
+            }
         }
 
         async function registerGuest() {
+            const button = document.getElementById('registerButton');
             const displayName = document.getElementById('displayName').value.trim();
             const phone = document.getElementById('phoneInput').value.trim();
+
             if (!displayName || !phone) {
                 showToast('Нужно заполнить данные', 'Без имени и номера телефона мы не сможем корректно привязать визиты и награды.');
                 return;
             }
-            await api(`${API_BASE}/guest/register`, {
-                method: 'POST',
-                body: JSON.stringify({ displayName, phone })
-            });
-            showToast('Ты в клубе', 'Регистрация завершена. Теперь все визиты и rewards будут на твоей стороне в одном экране.');
-            await loadGuest();
+
+            button.disabled = true;
+            button.textContent = 'Подключаем...';
+
+            try {
+                await api(`${API_BASE}/guest/register`, {
+                    method: 'POST',
+                    body: JSON.stringify({ displayName, phone })
+                });
+                showToast('Ты в клубе', 'Регистрация завершена. Теперь все визиты и rewards будут на твоей стороне в одном экране.');
+                await loadGuest();
+            } catch (error) {
+                showToast('Регистрация не прошла', error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Вступить в клуб';
+            }
         }
 
         async function selectReward() {
+            const button = document.getElementById('selectRewardButton');
             if (!guestState?.reward?.id || !selectedRewardId) {
                 showToast('Выбери награду', 'Сначала выбери один из вариантов reward pool своего уровня.');
                 return;
             }
-            await api(`${API_BASE}/guest/rewards/${guestState.reward.id}/select`, {
-                method: 'POST',
-                body: JSON.stringify({ rewardCatalogId: selectedRewardId })
-            });
-            showToast('Награда выбрана', 'Отлично. Теперь админ просто спишет её на месте без лишних подтверждений.');
-            await loadGuest();
+
+            button.disabled = true;
+            button.textContent = 'Сохраняем...';
+
+            try {
+                await api(`${API_BASE}/guest/rewards/${guestState.reward.id}/select`, {
+                    method: 'POST',
+                    body: JSON.stringify({ rewardCatalogId: selectedRewardId })
+                });
+                showToast('Награда выбрана', 'Отлично. Теперь админ просто спишет её на месте без лишних подтверждений.');
+                await loadGuest();
+            } catch (error) {
+                showToast('Не удалось сохранить выбор', error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Подтвердить выбор награды';
+            }
         }
 
         document.getElementById('registerButton').addEventListener('click', registerGuest);
         document.getElementById('selectRewardButton').addEventListener('click', selectReward);
 
-        loadSession().catch(error => {
-            showToast('Не удалось открыть клуб', error.message);
-        });
+        loadSession();
     </script>
 </body>
 </html>
