@@ -273,11 +273,13 @@
             const params = new URLSearchParams(window.location.search);
             const demoUserId = params.get('demo_user_id');
             if (!demoUserId) return {};
+            const firstName = params.get('demo_first_name') || 'Demo';
+            const lastName = params.get('demo_last_name') || 'Guest';
             return {
                 'X-Demo-Telegram-Id': demoUserId,
                 'X-Demo-Telegram-Username': params.get('demo_username') || 'guest_demo',
-                'X-Demo-First-Name': params.get('demo_first_name') || 'Demo',
-                'X-Demo-Last-Name': params.get('demo_last_name') || 'Guest'
+                'X-Demo-First-Name': encodeURIComponent(firstName),
+                'X-Demo-Last-Name': encodeURIComponent(lastName)
             };
         }
 

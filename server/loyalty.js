@@ -123,11 +123,20 @@ function getDemoTelegramUser(req) {
   const demoId = req.headers['x-demo-telegram-id'] || req.query.demo_user_id;
   if (!demoId) return null;
 
+  const safeDecode = (value, fallback = null) => {
+    if (!value) return fallback;
+    try {
+      return decodeURIComponent(String(value));
+    } catch (error) {
+      return String(value);
+    }
+  };
+
   return {
     id: Number(demoId),
-    username: req.headers['x-demo-telegram-username'] || req.query.demo_username || null,
-    first_name: req.headers['x-demo-first-name'] || req.query.demo_first_name || 'Demo',
-    last_name: req.headers['x-demo-last-name'] || req.query.demo_last_name || 'User'
+    username: safeDecode(req.headers['x-demo-telegram-username'] || req.query.demo_username, null),
+    first_name: safeDecode(req.headers['x-demo-first-name'] || req.query.demo_first_name, 'Demo'),
+    last_name: safeDecode(req.headers['x-demo-last-name'] || req.query.demo_last_name, 'User')
   };
 }
 
@@ -136,6 +145,7 @@ async function resolveRequester(req, pool) {
   const telegramUser = verifyTelegramInitData(initData, process.env.TELEGRAM_BOT_TOKEN) || getDemoTelegramUser(req);
 
   if (!telegramUser) {
+    console.warn(`⚠️ Loyalty auth failed: requester not resolved for ${req.method} ${req.path}`);
     return { telegramUser: null, guest: null, admin: null, isAdmin: false };
   }
 
