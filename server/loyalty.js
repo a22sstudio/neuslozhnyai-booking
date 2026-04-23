@@ -162,9 +162,9 @@ async function resolveRequester(req, pool) {
   if (guest) {
     guest = (await pool.query(`
       UPDATE loyalty_guests
-      SET telegram_username = COALESCE($2, telegram_username),
-          first_name = COALESCE($3, first_name),
-          last_name = COALESCE($4, last_name),
+      SET telegram_username = COALESCE($2::text, telegram_username),
+          first_name = COALESCE($3::text, first_name),
+          last_name = COALESCE($4::text, last_name),
           last_seen_at = NOW(),
           updated_at = NOW()
       WHERE id = $1
@@ -178,7 +178,7 @@ async function resolveRequester(req, pool) {
     WHERE is_active = true
       AND (
         telegram_user_id = $1
-        OR ($2 IS NOT NULL AND LOWER(telegram_username) = LOWER($2))
+        OR ($2::text IS NOT NULL AND LOWER(telegram_username) = LOWER($2::text))
       )
     LIMIT 1
   `, [telegramUser.id, telegramUser.username])).rows[0] || null;
