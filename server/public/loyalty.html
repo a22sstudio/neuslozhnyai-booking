@@ -670,13 +670,6 @@
             transform: translateY(-2px) scale(1.04);
             box-shadow: 0 14px 28px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.08);
         }
-        .gem.hint {
-            animation: gemHint 1.4s ease-in-out infinite;
-        }
-        @keyframes gemHint {
-            0%, 100% { transform: translateY(0) scale(1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 24px rgba(0,0,0,0.16); }
-            50% { transform: translateY(-3px) scale(1.04); box-shadow: 0 0 0 1px rgba(242,145,0,0.3), 0 18px 30px rgba(0,0,0,0.24), 0 0 24px rgba(242,145,0,0.22); }
-        }
         .gem.matched {
             animation: gemMatch 0.1s ease forwards;
         }
@@ -687,6 +680,13 @@
         }
         .gem.invalid {
             animation: gemInvalid 0.26s ease;
+        }
+        .gem.fresh {
+            animation: gemFresh 0.12s ease;
+        }
+        @keyframes gemFresh {
+            0% { opacity: 0; transform: translateY(-12px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes gemInvalid {
             0%, 100% { transform: translateX(0); }
@@ -1115,8 +1115,7 @@
             lastGain: 0,
             lastCascade: 1,
             bestCascade: 1,
-            hintMove: null,
-            hintTimeoutId: null
+            freshGemIds: new Set()
         };
 
         function demoHeaders() {
@@ -1657,6 +1656,7 @@
 
         function applyGravity(board) {
             const next = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => null));
+            const spawnedGemIds = new Set();
 
             for (let col = 0; col < BOARD_SIZE; col++) {
                 const survivors = [];
@@ -1674,12 +1674,14 @@
                 });
 
                 while (writeRow >= 0) {
-                    next[writeRow][col] = pickRefillGem(next, writeRow, col);
+                    const gem = pickRefillGem(next, writeRow, col);
+                    next[writeRow][col] = gem;
+                    spawnedGemIds.add(gem.id);
                     writeRow -= 1;
                 }
             }
 
-            return next;
+            return { board: next, spawnedGemIds };
         }
 
         function isAdjacent(first, second) {
@@ -1696,89 +1698,6 @@
             if (!node) return;
             node.textContent = text;
             node.className = `game-status-pill ${tone}`;
-        }
-
-        function clearHint() {
-            clearTimeout(matchState.hintTimeoutId);
-            matchState.hintTimeoutId = null;
-            matchState.hintMove = null;
-        }
-
-        function scheduleHint(delayMs = 2600) {
-            clearTimeout(matchState.hintTimeoutId);
-
-            if (!matchState.active || matchState.busy || matchState.selected) {
-                return;
-            }
-
-            matchState.hintTimeoutId = setTimeout(() => {
-                if (!matchState.active || matchState.busy || matchState.selected) {
-                    return;
-                }
-
-                const moves = getPossibleMoves(matchState.board);
-                if (!moves.length) return;
-
-                matchState.hintMove = moves[Math.floor(Math.random() * Math.min(moves.length, 3))];
-                renderBoard();
-                setGameEvent('Если нужен быстрый ход, посмотри на мягкую подсветку клеток.', 'neutral');
-            }, delayMs);
-        }
-
-        function captureBoardPositions() {
-            return new Map([...document.querySelectorAll('#gameBoard .gem')].map(node => [
-                node.dataset.gemId,
-                node.getBoundingClientRect()
-            ]));
-        }
-
-        function animateFreshBoard() {
-            [...document.querySelectorAll('#gameBoard .gem')].forEach((node, index) => {
-                node.animate([
-                    { opacity: 0, transform: 'translateY(-24px) scale(0.76)' },
-                    { opacity: 1, transform: 'translateY(0) scale(1)' }
-                ], {
-                    duration: 180,
-                    delay: index * 6,
-                    easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-                    fill: 'both'
-                });
-            });
-        }
-
-        function animateBoardTransition(previousPositions) {
-            if (!previousPositions) return;
-
-            [...document.querySelectorAll('#gameBoard .gem')].forEach(node => {
-                const next = node.getBoundingClientRect();
-                const previous = previousPositions.get(node.dataset.gemId);
-
-                if (previous) {
-                    const deltaX = previous.left - next.left;
-                    const deltaY = previous.top - next.top;
-
-                    if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
-                        node.animate([
-                            { transform: `translate(${deltaX}px, ${deltaY}px)` },
-                            { transform: 'translate(0, 0)' }
-                        ], {
-                            duration: 150,
-                            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                            fill: 'both'
-                        });
-                    }
-                    return;
-                }
-
-                node.animate([
-                    { opacity: 0, transform: 'translateY(-32px) scale(0.72)' },
-                    { opacity: 1, transform: 'translateY(0) scale(1)' }
-                ], {
-                    duration: 170,
-                    easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-                    fill: 'both'
-                });
-            });
         }
 
         function getBaseGroupScore(length) {
@@ -1842,25 +1761,20 @@
                 setStatusPill(document.getElementById('liveStatusPill'), 'Финальные секунды', 'warning');
             } else if (matchState.busy) {
                 setStatusPill(document.getElementById('liveStatusPill'), 'Каскад в работе', 'live');
-            } else if (matchState.hintMove) {
-                setStatusPill(document.getElementById('liveStatusPill'), 'Подсказка готова', 'ready');
             } else {
                 setStatusPill(document.getElementById('liveStatusPill'), 'Идёт сессия', 'live');
             }
         }
 
-        function renderBoard(options = {}) {
-            const { previousPositions = null, animateFresh = false } = options;
+        function renderBoard() {
             const boardEl = document.getElementById('gameBoard');
-            const hintCells = new Set((matchState.hintMove || []).map(cell => `${cell.row}:${cell.col}`));
 
             matchState.board = matchState.board.map(row => row.map(gem => gem || createGem()));
 
             boardEl.innerHTML = matchState.board.map((row, rowIndex) => row.map((gem, colIndex) => {
                 const isSelected = matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex;
-                const isHint = hintCells.has(`${rowIndex}:${colIndex}`);
                 return `
-                    <button class="gem ${gem.type} ${isSelected ? 'selected' : ''} ${isHint ? 'hint' : ''}" data-row="${rowIndex}" data-col="${colIndex}" data-gem-id="${gem.id}">
+                    <button class="gem ${gem.type} ${isSelected ? 'selected' : ''} ${matchState.freshGemIds.has(gem.id) ? 'fresh' : ''}" data-row="${rowIndex}" data-col="${colIndex}" data-gem-id="${gem.id}">
                         <img class="gem-icon" src="${GEM_META[gem.type].icon}" alt="${GEM_META[gem.type].label}">
                     </button>
                 `;
@@ -1869,19 +1783,11 @@
             boardEl.querySelectorAll('.gem').forEach(node => {
                 node.addEventListener('click', () => onGemClick(Number(node.dataset.row), Number(node.dataset.col)));
             });
-
-            requestAnimationFrame(() => {
-                if (previousPositions) {
-                    animateBoardTransition(previousPositions);
-                } else if (animateFresh) {
-                    animateFreshBoard();
-                }
-            });
+            matchState.freshGemIds = new Set();
         }
 
         function resetGameState() {
             clearInterval(matchState.intervalId);
-            clearHint();
             matchState = {
                 sessionId: null,
                 board: [],
@@ -1896,8 +1802,7 @@
                 lastGain: 0,
                 lastCascade: 1,
                 bestCascade: 1,
-                hintMove: null,
-                hintTimeoutId: null
+                freshGemIds: new Set()
             };
         }
 
@@ -1948,16 +1853,14 @@
         async function ensurePlayableBoard() {
             if (getPossibleMoves(matchState.board).length) return;
 
-            const previousPositions = captureBoardPositions();
             matchState.board = reshuffleBoard(matchState.board);
             document.getElementById('gameBoardShell').classList.add('shuffling');
-            renderBoard({ previousPositions });
+            renderBoard();
             setGameEvent('Допустимые ходы закончились. Поле собрано заново, можно продолжать без паузы.', 'warning');
             updateGameHud();
             showToast('Поле обновлено', 'Свободных ходов не осталось, поэтому мы автоматически пересобрали поле.');
             setTimeout(() => document.getElementById('gameBoardShell').classList.remove('shuffling'), 420);
-            scheduleHint(1800);
-            await delay(120);
+            await delay(70);
         }
 
         function showScoreBurst(points, combo) {
@@ -1998,10 +1901,11 @@
 
                 await delay(MATCH_CLEAR_DELAY_MS);
 
-                const previousPositions = captureBoardPositions();
-                currentBoard = applyGravity(removeMatchedCells(currentBoard, resolution.cells));
+                const gravityResult = applyGravity(removeMatchedCells(currentBoard, resolution.cells));
+                currentBoard = gravityResult.board;
                 matchState.board = currentBoard;
-                renderBoard({ previousPositions });
+                matchState.freshGemIds = gravityResult.spawnedGemIds;
+                renderBoard();
                 updateGameHud();
                 await delay(DROP_SETTLE_DELAY_MS);
             }
@@ -2010,7 +1914,6 @@
             updateGameHud();
             renderBoard();
             await ensurePlayableBoard();
-            scheduleHint();
         }
 
         async function onGemClick(row, col) {
@@ -2019,8 +1922,6 @@
                 await ensurePlayableBoard();
                 return;
             }
-
-            clearHint();
 
             if (!matchState.selected) {
                 matchState.selected = { row, col };
@@ -2036,7 +1937,6 @@
             if (first.row === second.row && first.col === second.col) {
                 matchState.selected = null;
                 renderBoard();
-                scheduleHint();
                 return;
             }
 
@@ -2048,7 +1948,6 @@
                 return;
             }
 
-            const previousPositions = captureBoardPositions();
             const swapped = swapCells(matchState.board, first, second);
             const resolution = collectMatchGroups(swapped);
             matchState.selected = null;
@@ -2064,7 +1963,6 @@
                     document.querySelector(selectorA)?.classList.remove('invalid');
                     document.querySelector(selectorB)?.classList.remove('invalid');
                 }, 260);
-                scheduleHint(2400);
                 return;
             }
 
@@ -2073,7 +1971,7 @@
             matchState.lastCascade = 1;
             matchState.board = swapped;
             setGameEvent('Ход засчитан. Сразу считаем совпадения, очки и каскады.', 'neutral');
-            renderBoard({ previousPositions });
+            renderBoard();
             updateGameHud();
             await delay(SWAP_SETTLE_DELAY_MS);
             await resolveMatches(swapped);
@@ -2092,9 +1990,8 @@
                 document.getElementById('gameModal').classList.add('show');
                 setGameEvent('Поле готово. Лучший темп дают линии из 4+, каскады и быстрые решения.', 'neutral');
                 updateGameHud();
-                renderBoard({ animateFresh: true });
+                renderBoard();
                 await ensurePlayableBoard();
-                scheduleHint(2800);
 
                 matchState.intervalId = setInterval(() => {
                     matchState.timer -= 1;
