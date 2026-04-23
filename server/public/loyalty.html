@@ -462,6 +462,8 @@
             background: rgba(255,255,255,0.03);
             cursor: pointer;
             overflow: hidden;
+            display: grid;
+            place-items: center;
         }
         .gem.selected {
             outline: 2px solid rgba(255,255,255,0.85);
@@ -473,15 +475,36 @@
             inset: 18% 18%;
             border-radius: 14px;
         }
-        .gem.ember::before { background: linear-gradient(135deg, #ffb347, #ff6e42); }
-        .gem.smoke::before { background: linear-gradient(135deg, #a2b6ff, #6979d6); }
-        .gem.neon::before { background: linear-gradient(135deg, #a8ff78, #3ad29f); }
-        .gem.velvet::before { background: linear-gradient(135deg, #ff8bd1, #d84f98); }
-        .gem.night::before { background: linear-gradient(135deg, #8f7cff, #4c3fa8); }
+        .gem.bowl::before { background: linear-gradient(135deg, #ffb347, #ff7b32); }
+        .gem.flask::before { background: linear-gradient(135deg, #8fd8ff, #5e82ff); }
+        .gem.coal::before { background: linear-gradient(135deg, #8a8a8a, #343434); }
+        .gem.tongs::before { background: linear-gradient(135deg, #f2c4ff, #8d5bff); }
+        .gem.mouthpiece::before { background: linear-gradient(135deg, #baffbe, #39ca9d); }
+        .gem.spark::before { background: linear-gradient(135deg, #fff1a8, #ffae42); }
         .gem::after {
-            inset: 30% 30%;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.24);
+            inset: 8% 8%;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.16), transparent 65%);
+        }
+        .gem-icon {
+            position: relative;
+            z-index: 2;
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+        }
+        .gem-label {
+            position: absolute;
+            left: 50%;
+            bottom: 8px;
+            transform: translateX(-50%);
+            z-index: 2;
+            font-size: 9px;
+            line-height: 1;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.9);
         }
         .game-actions {
             display: flex;
@@ -726,7 +749,15 @@
         const API_BASE = `${window.location.origin}/api/loyalty`;
         const MATCH_TARGET_SCORE = 2000;
         const MATCH_DURATION_SECONDS = 120;
-        const GEMS = ['ember', 'smoke', 'neon', 'velvet', 'night'];
+        const GEMS = ['bowl', 'flask', 'coal', 'tongs', 'mouthpiece', 'spark'];
+        const GEM_META = {
+            bowl: { icon: './assets/hookah-icons/bowl.ico', label: 'чаша' },
+            flask: { icon: './assets/hookah-icons/flask.ico', label: 'колба' },
+            coal: { icon: './assets/hookah-icons/coal.ico', label: 'уголь' },
+            tongs: { icon: './assets/hookah-icons/tongs.ico', label: 'щипцы' },
+            mouthpiece: { icon: './assets/hookah-icons/mouthpiece.ico', label: 'мундштук' },
+            spark: { icon: './assets/hookah-icons/smoke.ico', label: 'дым' }
+        };
         const BOARD_SIZE = 6;
 
         let session = null;
@@ -1217,7 +1248,10 @@
         function renderBoard() {
             const boardEl = document.getElementById('gameBoard');
             boardEl.innerHTML = matchState.board.map((row, rowIndex) => row.map((gem, colIndex) => `
-                <button class="gem ${gem} ${matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex ? 'selected' : ''}" data-row="${rowIndex}" data-col="${colIndex}"></button>
+                <button class="gem ${gem} ${matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex ? 'selected' : ''}" data-row="${rowIndex}" data-col="${colIndex}">
+                    <img class="gem-icon" src="${GEM_META[gem].icon}" alt="${GEM_META[gem].label}">
+                    <span class="gem-label">${GEM_META[gem].label}</span>
+                </button>
             `).join('')).join('');
 
             boardEl.querySelectorAll('.gem').forEach(node => {
