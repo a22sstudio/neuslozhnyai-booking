@@ -390,6 +390,12 @@
             color: var(--muted);
             line-height: 1.5;
         }
+        .game-subbar {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .game-chip {
             min-width: 88px;
             padding: 10px 12px;
@@ -421,10 +427,15 @@
             border-radius: 24px;
             box-shadow: var(--shadow);
             padding: 18px;
+            animation: modalRise 0.24s ease;
+        }
+        @keyframes modalRise {
+            from { opacity: 0; transform: translateY(16px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .game-hud {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-top: 14px;
         }
@@ -433,6 +444,15 @@
             border: 1px solid var(--line);
             background: rgba(255,255,255,0.04);
             padding: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hud-box::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 60%);
+            pointer-events: none;
         }
         .hud-box span {
             display: block;
@@ -459,52 +479,85 @@
             aspect-ratio: 1;
             border-radius: 16px;
             border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.03);
+            background: radial-gradient(circle at top, rgba(255,255,255,0.08), rgba(255,255,255,0.015) 60%);
             cursor: pointer;
             overflow: hidden;
             display: grid;
             place-items: center;
+            transition: transform 0.16s ease, opacity 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            animation: gemAppear 0.18s ease;
+        }
+        @keyframes gemAppear {
+            from { opacity: 0; transform: scale(0.88); }
+            to { opacity: 1; transform: scale(1); }
         }
         .gem.selected {
             outline: 2px solid rgba(255,255,255,0.85);
             outline-offset: 2px;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .gem.matched {
+            animation: gemMatch 0.28s ease forwards;
+        }
+        @keyframes gemMatch {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.14); opacity: 1; }
+            100% { transform: scale(0.76); opacity: 0; }
+        }
+        .gem.invalid {
+            animation: gemInvalid 0.26s ease;
+        }
+        @keyframes gemInvalid {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-3px); }
         }
         .gem::before, .gem::after {
             content: "";
             position: absolute;
-            inset: 18% 18%;
+            inset: 14% 14%;
             border-radius: 14px;
         }
-        .gem.bowl::before { background: linear-gradient(135deg, #ffb347, #ff7b32); }
-        .gem.flask::before { background: linear-gradient(135deg, #8fd8ff, #5e82ff); }
-        .gem.coal::before { background: linear-gradient(135deg, #8a8a8a, #343434); }
-        .gem.tongs::before { background: linear-gradient(135deg, #f2c4ff, #8d5bff); }
-        .gem.mouthpiece::before { background: linear-gradient(135deg, #baffbe, #39ca9d); }
-        .gem.spark::before { background: linear-gradient(135deg, #fff1a8, #ffae42); }
+        .gem.bowl::before,
+        .gem.flask::before,
+        .gem.coal::before,
+        .gem.tongs::before,
+        .gem.mouthpiece::before,
+        .gem.spark::before { background: transparent; }
         .gem::after {
-            inset: 8% 8%;
+            inset: 0;
             border-radius: 16px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.16), transparent 65%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 52%);
         }
         .gem-icon {
             position: relative;
             z-index: 2;
-            width: 30px;
-            height: 30px;
+            width: 38px;
+            height: 38px;
             object-fit: contain;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
         }
-        .gem-label {
-            position: absolute;
+        .score-burst {
+            position: fixed;
+            z-index: 35;
             left: 50%;
-            bottom: 8px;
-            transform: translateX(-50%);
-            z-index: 2;
-            font-size: 9px;
-            line-height: 1;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.9);
+            top: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(242,145,0,0.14);
+            border: 1px solid rgba(242,145,0,0.25);
+            color: #ffd38b;
+            font-weight: 800;
+            pointer-events: none;
+            animation: burstFloat 0.8s ease forwards;
+        }
+        @keyframes burstFloat {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+            20% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -88%) scale(1.04); }
         }
         .game-actions {
             display: flex;
@@ -561,6 +614,10 @@
                 <div class="hud-box">
                     <span>Цель</span>
                     <strong id="hudGoal">2000</strong>
+                </div>
+                <div class="hud-box">
+                    <span>Последний ход</span>
+                    <strong id="hudBurst">0</strong>
                 </div>
             </div>
 
@@ -707,19 +764,25 @@
             <div class="section-note">В программах лояльности матч-игры работают лучше всего, когда у них есть короткая сессия, понятная цель и реальная привязка к валюте программы. Здесь у тебя 2 минуты, цель 2 000 очков и награда — 1 монета. Играть можно раз в сутки.</div>
 
             <div class="game-card">
-                <div class="game-top">
-                    <div class="game-goal">
-                        Собери одинаковые фишки в ряд. За 2 000 очков получаешь 1 монету на прокрутку колеса.
-                    </div>
+            <div class="game-top">
+                <div class="game-goal">
+                    Собери одинаковые фишки в ряд. За 2 000 очков получаешь 1 монету на прокрутку колеса.
+                </div>
                     <div class="game-chip">
                         <strong id="matchStatusValue">Ready</strong>
                         <span class="eyebrow">Статус</span>
-                    </div>
                 </div>
+            </div>
 
-                <div class="wheel-meta">
-                    <div class="meta-card">
-                        <div class="label">Цель</div>
+            <div class="game-subbar">
+                <div class="badge">1 игра в сутки</div>
+                <div class="badge">2000 очков = 1 монета</div>
+                <div class="badge">идеальная игра ≈ 90 сек</div>
+            </div>
+
+            <div class="wheel-meta">
+                <div class="meta-card">
+                    <div class="label">Цель</div>
                         <div class="value">2000</div>
                     </div>
                     <div class="meta-card">
@@ -776,7 +839,9 @@
             cascades: 0,
             timer: MATCH_DURATION_SECONDS,
             intervalId: null,
-            active: false
+            active: false,
+            busy: false,
+            lastGain: 0
         };
 
         function demoHeaders() {
@@ -1242,6 +1307,7 @@
             document.getElementById('hudScore').textContent = matchState.score;
             document.getElementById('hudTime').textContent = `${Math.floor(matchState.timer / 60)}:${String(matchState.timer % 60).padStart(2, '0')}`;
             document.getElementById('hudGoal').textContent = MATCH_TARGET_SCORE;
+            document.getElementById('hudBurst').textContent = matchState.lastGain || 0;
             document.getElementById('matchProgress').style.width = `${Math.min(100, (matchState.score / MATCH_TARGET_SCORE) * 100)}%`;
         }
 
@@ -1250,7 +1316,6 @@
             boardEl.innerHTML = matchState.board.map((row, rowIndex) => row.map((gem, colIndex) => `
                 <button class="gem ${gem} ${matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex ? 'selected' : ''}" data-row="${rowIndex}" data-col="${colIndex}">
                     <img class="gem-icon" src="${GEM_META[gem].icon}" alt="${GEM_META[gem].label}">
-                    <span class="gem-label">${GEM_META[gem].label}</span>
                 </button>
             `).join('')).join('');
 
@@ -1270,8 +1335,64 @@
                 cascades: 0,
                 timer: 120,
                 intervalId: null,
-                active: false
+                active: false,
+                busy: false,
+                lastGain: 0
             };
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function getPossibleMoves(board) {
+            const moves = [];
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const neighbors = [
+                        { row: row + 1, col },
+                        { row, col: col + 1 }
+                    ].filter(cell => cell.row < BOARD_SIZE && cell.col < BOARD_SIZE);
+
+                    for (const next of neighbors) {
+                        const swapped = swapCells(board, { row, col }, next);
+                        if (findMatches(swapped).length) {
+                            moves.push([{ row, col }, next]);
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function reshuffleBoard(board) {
+            let copy = board.map(row => [...row]);
+            let safe = 0;
+            do {
+                const flat = copy.flat().sort(() => Math.random() - 0.5);
+                copy = Array.from({ length: BOARD_SIZE }, (_, row) =>
+                    Array.from({ length: BOARD_SIZE }, (_, col) => flat[row * BOARD_SIZE + col])
+                );
+                safe += 1;
+                if (safe > 30) break;
+            } while (findMatches(copy).length || !getPossibleMoves(copy).length);
+            return copy;
+        }
+
+        async function ensurePlayableBoard() {
+            if (getPossibleMoves(matchState.board).length) return;
+            matchState.board = reshuffleBoard(matchState.board);
+            renderBoard();
+            showToast('Поле обновлено', 'Свободных ходов не осталось, поэтому мы автоматически пересобрали поле.');
+            await delay(250);
+        }
+
+        function showScoreBurst(points, combo) {
+            const burst = document.createElement('div');
+            burst.className = 'score-burst';
+            burst.textContent = combo > 1 ? `+${points} • x${combo}` : `+${points}`;
+            document.body.appendChild(burst);
+            setTimeout(() => burst.remove(), 800);
         }
 
         async function resolveMatches(board) {
@@ -1284,20 +1405,32 @@
 
                 cascade += 1;
                 matchState.cascades += 1;
-                matchState.score += (matches.length * 65) + (cascade * 35);
+                const gain = (matches.length * 18) + Math.max(0, (matches.length - 3) * 10) + (cascade * 8);
+                matchState.lastGain = gain;
+                matchState.score += gain;
+                showScoreBurst(gain, cascade);
+                matches.forEach(match => {
+                    const selector = `.gem[data-row="${match.row}"][data-col="${match.col}"]`;
+                    document.querySelector(selector)?.classList.add('matched');
+                });
+                await delay(190);
                 matches.forEach(match => {
                     currentBoard[match.row][match.col] = null;
                 });
                 currentBoard = collapseBoard(currentBoard);
+                renderBoard();
+                updateGameHud();
+                await delay(140);
             }
 
             matchState.board = currentBoard;
             updateGameHud();
             renderBoard();
+            await ensurePlayableBoard();
         }
 
         async function onGemClick(row, col) {
-            if (!matchState.active) return;
+            if (!matchState.active || matchState.busy) return;
 
             if (!matchState.selected) {
                 matchState.selected = { row, col };
@@ -1325,11 +1458,24 @@
 
             if (!matches.length) {
                 renderBoard();
+                const selectorA = `.gem[data-row="${first.row}"][data-col="${first.col}"]`;
+                const selectorB = `.gem[data-row="${second.row}"][data-col="${second.col}"]`;
+                document.querySelector(selectorA)?.classList.add('invalid');
+                document.querySelector(selectorB)?.classList.add('invalid');
+                setTimeout(() => {
+                    document.querySelector(selectorA)?.classList.remove('invalid');
+                    document.querySelector(selectorB)?.classList.remove('invalid');
+                }, 260);
                 return;
             }
 
+            matchState.busy = true;
             matchState.moves += 1;
+            matchState.board = swapped;
+            renderBoard();
+            await delay(170);
             await resolveMatches(swapped);
+            matchState.busy = false;
         }
 
         async function startMatch() {
