@@ -678,7 +678,7 @@
             50% { transform: translateY(-3px) scale(1.04); box-shadow: 0 0 0 1px rgba(242,145,0,0.3), 0 18px 30px rgba(0,0,0,0.24), 0 0 24px rgba(242,145,0,0.22); }
         }
         .gem.matched {
-            animation: gemMatch 0.16s ease forwards;
+            animation: gemMatch 0.1s ease forwards;
         }
         @keyframes gemMatch {
             0% { transform: scale(1); opacity: 1; filter: brightness(1); }
@@ -753,7 +753,7 @@
             color: #fff4d2;
             font-weight: 800;
             pointer-events: none;
-            animation: burstFloat 0.8s ease forwards;
+            animation: burstFloat 0.55s ease forwards;
         }
         @keyframes burstFloat {
             0% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
@@ -1089,6 +1089,9 @@
             spark: { icon: './assets/hookah-icons/smoke.ico', label: 'дым' }
         };
         const BOARD_SIZE = 6;
+        const MATCH_CLEAR_DELAY_MS = 70;
+        const DROP_SETTLE_DELAY_MS = 95;
+        const SWAP_SETTLE_DELAY_MS = 90;
 
         let session = null;
         let guestState = null;
@@ -1626,6 +1629,32 @@
             return copy;
         }
 
+        function pickRefillGem(board, row, col) {
+            const blocked = new Set();
+
+            const leftOne = board[row]?.[col - 1]?.type;
+            const leftTwo = board[row]?.[col - 2]?.type;
+            if (leftOne && leftTwo && leftOne === leftTwo) {
+                blocked.add(leftOne);
+            }
+
+            const rightOne = board[row]?.[col + 1]?.type;
+            const rightTwo = board[row]?.[col + 2]?.type;
+            if (rightOne && rightTwo && rightOne === rightTwo) {
+                blocked.add(rightOne);
+            }
+
+            const belowOne = board[row + 1]?.[col]?.type;
+            const belowTwo = board[row + 2]?.[col]?.type;
+            if (belowOne && belowTwo && belowOne === belowTwo) {
+                blocked.add(belowOne);
+            }
+
+            const candidates = GEMS.filter(type => !blocked.has(type));
+            const pool = candidates.length ? candidates : GEMS;
+            return createGem(pool[Math.floor(Math.random() * pool.length)]);
+        }
+
         function applyGravity(board) {
             const next = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => null));
 
@@ -1645,7 +1674,7 @@
                 });
 
                 while (writeRow >= 0) {
-                    next[writeRow][col] = createGem();
+                    next[writeRow][col] = pickRefillGem(next, writeRow, col);
                     writeRow -= 1;
                 }
             }
@@ -1709,8 +1738,8 @@
                     { opacity: 0, transform: 'translateY(-24px) scale(0.76)' },
                     { opacity: 1, transform: 'translateY(0) scale(1)' }
                 ], {
-                    duration: 260,
-                    delay: index * 10,
+                    duration: 180,
+                    delay: index * 6,
                     easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
                     fill: 'both'
                 });
@@ -1733,7 +1762,7 @@
                             { transform: `translate(${deltaX}px, ${deltaY}px)` },
                             { transform: 'translate(0, 0)' }
                         ], {
-                            duration: 220,
+                            duration: 150,
                             easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
                             fill: 'both'
                         });
@@ -1745,7 +1774,7 @@
                     { opacity: 0, transform: 'translateY(-32px) scale(0.72)' },
                     { opacity: 1, transform: 'translateY(0) scale(1)' }
                 ], {
-                    duration: 240,
+                    duration: 170,
                     easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
                     fill: 'both'
                 });
@@ -1928,7 +1957,7 @@
             showToast('Поле обновлено', 'Свободных ходов не осталось, поэтому мы автоматически пересобрали поле.');
             setTimeout(() => document.getElementById('gameBoardShell').classList.remove('shuffling'), 420);
             scheduleHint(1800);
-            await delay(220);
+            await delay(120);
         }
 
         function showScoreBurst(points, combo) {
@@ -1967,14 +1996,14 @@
                     document.querySelector(`.gem[data-gem-id="${id}"]`)?.classList.add('matched');
                 });
 
-                await delay(120);
+                await delay(MATCH_CLEAR_DELAY_MS);
 
                 const previousPositions = captureBoardPositions();
                 currentBoard = applyGravity(removeMatchedCells(currentBoard, resolution.cells));
                 matchState.board = currentBoard;
                 renderBoard({ previousPositions });
                 updateGameHud();
-                await delay(180);
+                await delay(DROP_SETTLE_DELAY_MS);
             }
 
             matchState.board = currentBoard;
@@ -2046,7 +2075,7 @@
             setGameEvent('Ход засчитан. Сразу считаем совпадения, очки и каскады.', 'neutral');
             renderBoard({ previousPositions });
             updateGameHud();
-            await delay(180);
+            await delay(SWAP_SETTLE_DELAY_MS);
             await resolveMatches(swapped);
             matchState.busy = false;
             updateGameHud();
