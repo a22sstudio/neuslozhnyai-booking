@@ -376,8 +376,9 @@
             border: 1px solid var(--line);
             border-radius: 24px;
             background:
-                radial-gradient(circle at top right, rgba(242,145,0,0.12), transparent 34%),
-                radial-gradient(circle at bottom left, rgba(255,255,255,0.05), transparent 28%),
+                radial-gradient(circle at top right, rgba(242,145,0,0.2), transparent 32%),
+                radial-gradient(circle at 18% 100%, rgba(73,171,255,0.14), transparent 34%),
+                radial-gradient(circle at 82% 78%, rgba(255,96,181,0.1), transparent 28%),
                 var(--panel-soft);
             padding: 18px;
             overflow: hidden;
@@ -413,8 +414,8 @@
             min-width: 88px;
             padding: 10px 12px;
             border-radius: 16px;
-            border: 1px solid var(--line);
-            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
             text-align: right;
         }
         .game-chip strong {
@@ -473,7 +474,7 @@
             padding: 14px;
             border-radius: 18px;
             border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.045);
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
             overflow: hidden;
         }
         .game-tip::after {
@@ -555,7 +556,7 @@
         .hud-box {
             border-radius: 16px;
             border: 1px solid var(--line);
-            background: rgba(255,255,255,0.04);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035));
             padding: 12px;
             position: relative;
             overflow: hidden;
@@ -592,8 +593,10 @@
         .game-event {
             margin-top: 12px;
             border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.1);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)),
+                rgba(255,255,255,0.02);
             padding: 12px 14px;
             font-size: 13px;
             line-height: 1.5;
@@ -616,11 +619,13 @@
             margin-top: 16px;
             padding: 12px;
             border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
             background:
-                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
+                radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 48%),
+                linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)),
                 rgba(255,255,255,0.02);
             overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .board-shell::before {
             content: "";
@@ -650,27 +655,35 @@
             position: relative;
             aspect-ratio: 1;
             border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+            border: 1px solid rgba(255,255,255,0.12);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025));
             cursor: pointer;
             overflow: hidden;
             display: grid;
             place-items: center;
-            transition: transform 0.16s ease, opacity 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 24px rgba(0,0,0,0.16);
+            transition: transform 0.16s ease, opacity 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, filter 0.18s ease;
         }
         .gem.selected {
             outline: 2px solid rgba(255,255,255,0.85);
             outline-offset: 2px;
             transform: translateY(-2px) scale(1.04);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 14px 28px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.08);
+        }
+        .gem.hint {
+            animation: gemHint 1.4s ease-in-out infinite;
+        }
+        @keyframes gemHint {
+            0%, 100% { transform: translateY(0) scale(1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 24px rgba(0,0,0,0.16); }
+            50% { transform: translateY(-3px) scale(1.04); box-shadow: 0 0 0 1px rgba(242,145,0,0.3), 0 18px 30px rgba(0,0,0,0.24), 0 0 24px rgba(242,145,0,0.22); }
         }
         .gem.matched {
-            animation: gemMatch 0.28s ease forwards;
+            animation: gemMatch 0.16s ease forwards;
         }
         @keyframes gemMatch {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.14); opacity: 1; }
-            100% { transform: scale(0.76); opacity: 0; }
+            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            50% { transform: scale(1.16); opacity: 1; filter: brightness(1.3); }
+            100% { transform: scale(0.72); opacity: 0.08; filter: brightness(1.6); }
         }
         .gem.invalid {
             animation: gemInvalid 0.26s ease;
@@ -688,13 +701,43 @@
             border-radius: 16px;
             background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 52%);
         }
+        .gem.bowl {
+            background:
+                radial-gradient(circle at 30% 28%, rgba(95,221,255,0.26), transparent 38%),
+                linear-gradient(180deg, rgba(95,221,255,0.12), rgba(255,255,255,0.02));
+        }
+        .gem.flask {
+            background:
+                radial-gradient(circle at 30% 28%, rgba(255,255,255,0.2), transparent 38%),
+                linear-gradient(180deg, rgba(204,217,255,0.12), rgba(255,255,255,0.02));
+        }
+        .gem.coal {
+            background:
+                radial-gradient(circle at 70% 24%, rgba(255,129,92,0.24), transparent 36%),
+                linear-gradient(180deg, rgba(255,120,88,0.12), rgba(255,255,255,0.02));
+        }
+        .gem.tongs {
+            background:
+                radial-gradient(circle at 70% 24%, rgba(255,255,255,0.22), transparent 34%),
+                linear-gradient(180deg, rgba(224,224,232,0.12), rgba(255,255,255,0.02));
+        }
+        .gem.mouthpiece {
+            background:
+                radial-gradient(circle at 70% 24%, rgba(255,210,126,0.22), transparent 34%),
+                linear-gradient(180deg, rgba(255,192,118,0.12), rgba(255,255,255,0.02));
+        }
+        .gem.spark {
+            background:
+                radial-gradient(circle at 40% 28%, rgba(255,255,255,0.24), transparent 34%),
+                linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02));
+        }
         .gem-icon {
             position: relative;
             z-index: 2;
-            width: 46px;
-            height: 46px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.34));
             pointer-events: none;
         }
         .score-burst {
@@ -705,9 +748,9 @@
             transform: translate(-50%, -50%);
             padding: 10px 14px;
             border-radius: 999px;
-            background: rgba(242,145,0,0.14);
-            border: 1px solid rgba(242,145,0,0.25);
-            color: #ffd38b;
+            background: linear-gradient(135deg, rgba(242,145,0,0.2), rgba(255,96,181,0.16));
+            border: 1px solid rgba(255,214,155,0.28);
+            color: #fff4d2;
             font-weight: 800;
             pointer-events: none;
             animation: burstFloat 0.8s ease forwards;
@@ -1046,12 +1089,6 @@
             spark: { icon: './assets/hookah-icons/smoke.ico', label: 'дым' }
         };
         const BOARD_SIZE = 6;
-        const SCORE_TABLE = {
-            3: 22,
-            4: 34,
-            5: 46,
-            6: 60
-        };
 
         let session = null;
         let guestState = null;
@@ -1074,7 +1111,9 @@
             busy: false,
             lastGain: 0,
             lastCascade: 1,
-            bestCascade: 1
+            bestCascade: 1,
+            hintMove: null,
+            hintTimeoutId: null
         };
 
         function demoHeaders() {
@@ -1491,32 +1530,35 @@
             return { id: `gem-${gemSequence}`, type };
         }
 
-        function createBoard() {
-            const board = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => createGem()));
-            while (findMatches(board).length) {
-                for (const match of findMatches(board)) {
-                    board[match.row][match.col] = createGem();
-                }
-            }
-            return board;
-        }
+        function collectMatchGroups(board) {
+            const groups = [];
+            const seenCells = new Map();
 
-        function findMatches(board) {
-            const matches = [];
+            if (!board?.length) {
+                return { groups, cells: [] };
+            }
 
             for (let row = 0; row < BOARD_SIZE; row++) {
                 let count = 1;
                 for (let col = 1; col <= BOARD_SIZE; col++) {
                     const current = board[row]?.[col]?.type;
                     const previous = board[row]?.[col - 1]?.type;
+
                     if (current && previous && current === previous) {
                         count += 1;
-                    } else {
-                        if (count >= 3) {
-                            for (let i = 0; i < count; i++) matches.push({ row, col: col - 1 - i });
-                        }
-                        count = 1;
+                        continue;
                     }
+
+                    if (count >= 3) {
+                        const cells = [];
+                        for (let index = 0; index < count; index++) {
+                            const cell = { row, col: col - 1 - index };
+                            cells.push(cell);
+                            seenCells.set(`${cell.row}:${cell.col}`, cell);
+                        }
+                        groups.push({ cells, length: count, axis: 'row' });
+                    }
+                    count = 1;
                 }
             }
 
@@ -1525,18 +1567,47 @@
                 for (let row = 1; row <= BOARD_SIZE; row++) {
                     const current = board[row]?.[col]?.type;
                     const previous = board[row - 1]?.[col]?.type;
+
                     if (current && previous && current === previous) {
                         count += 1;
-                    } else {
-                        if (count >= 3) {
-                            for (let i = 0; i < count; i++) matches.push({ row: row - 1 - i, col });
-                        }
-                        count = 1;
+                        continue;
                     }
+
+                    if (count >= 3) {
+                        const cells = [];
+                        for (let index = 0; index < count; index++) {
+                            const cell = { row: row - 1 - index, col };
+                            cells.push(cell);
+                            seenCells.set(`${cell.row}:${cell.col}`, cell);
+                        }
+                        groups.push({ cells, length: count, axis: 'col' });
+                    }
+                    count = 1;
                 }
             }
 
-            return matches.filter((item, index, arr) => index === arr.findIndex(other => other.row === item.row && other.col === item.col));
+            return {
+                groups,
+                cells: [...seenCells.values()]
+            };
+        }
+
+        function createBoard() {
+            let board = [];
+            let safe = 0;
+
+            do {
+                board = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => createGem()));
+                while (collectMatchGroups(board).cells.length) {
+                    const { cells } = collectMatchGroups(board);
+                    cells.forEach(cell => {
+                        board[cell.row][cell.col] = createGem();
+                    });
+                }
+                safe += 1;
+            } while (!getPossibleMoves(board).length && safe < 40);
+
+            return board;
         }
 
         function swapCells(board, first, second) {
@@ -1547,18 +1618,39 @@
             return copy;
         }
 
-        function collapseBoard(board) {
+        function removeMatchedCells(board, cells) {
             const copy = board.map(row => [...row]);
+            cells.forEach(cell => {
+                copy[cell.row][cell.col] = null;
+            });
+            return copy;
+        }
+
+        function applyGravity(board) {
+            const next = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => null));
+
             for (let col = 0; col < BOARD_SIZE; col++) {
-                const stack = [];
+                const survivors = [];
+
                 for (let row = BOARD_SIZE - 1; row >= 0; row--) {
-                    if (copy[row][col]) stack.push(copy[row][col]);
+                    if (board[row][col]) {
+                        survivors.push(board[row][col]);
+                    }
                 }
-                for (let row = BOARD_SIZE - 1; row >= 0; row--) {
-                    copy[row][col] = stack[BOARD_SIZE - 1 - row] || createGem();
+
+                let writeRow = BOARD_SIZE - 1;
+                survivors.forEach(gem => {
+                    next[writeRow][col] = gem;
+                    writeRow -= 1;
+                });
+
+                while (writeRow >= 0) {
+                    next[writeRow][col] = createGem();
+                    writeRow -= 1;
                 }
             }
-            return copy;
+
+            return next;
         }
 
         function isAdjacent(first, second) {
@@ -1577,6 +1669,33 @@
             node.className = `game-status-pill ${tone}`;
         }
 
+        function clearHint() {
+            clearTimeout(matchState.hintTimeoutId);
+            matchState.hintTimeoutId = null;
+            matchState.hintMove = null;
+        }
+
+        function scheduleHint(delayMs = 2600) {
+            clearTimeout(matchState.hintTimeoutId);
+
+            if (!matchState.active || matchState.busy || matchState.selected) {
+                return;
+            }
+
+            matchState.hintTimeoutId = setTimeout(() => {
+                if (!matchState.active || matchState.busy || matchState.selected) {
+                    return;
+                }
+
+                const moves = getPossibleMoves(matchState.board);
+                if (!moves.length) return;
+
+                matchState.hintMove = moves[Math.floor(Math.random() * Math.min(moves.length, 3))];
+                renderBoard();
+                setGameEvent('Если нужен быстрый ход, посмотри на мягкую подсветку клеток.', 'neutral');
+            }, delayMs);
+        }
+
         function captureBoardPositions() {
             return new Map([...document.querySelectorAll('#gameBoard .gem')].map(node => [
                 node.dataset.gemId,
@@ -1587,11 +1706,11 @@
         function animateFreshBoard() {
             [...document.querySelectorAll('#gameBoard .gem')].forEach((node, index) => {
                 node.animate([
-                    { opacity: 0, transform: 'translateY(-18px) scale(0.78)' },
+                    { opacity: 0, transform: 'translateY(-24px) scale(0.76)' },
                     { opacity: 1, transform: 'translateY(0) scale(1)' }
                 ], {
-                    duration: 240,
-                    delay: index * 12,
+                    duration: 260,
+                    delay: index * 10,
                     easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
                     fill: 'both'
                 });
@@ -1600,6 +1719,7 @@
 
         function animateBoardTransition(previousPositions) {
             if (!previousPositions) return;
+
             [...document.querySelectorAll('#gameBoard .gem')].forEach(node => {
                 const next = node.getBoundingClientRect();
                 const previous = previousPositions.get(node.dataset.gemId);
@@ -1613,7 +1733,7 @@
                             { transform: `translate(${deltaX}px, ${deltaY}px)` },
                             { transform: 'translate(0, 0)' }
                         ], {
-                            duration: 260,
+                            duration: 220,
                             easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
                             fill: 'both'
                         });
@@ -1622,19 +1742,42 @@
                 }
 
                 node.animate([
-                    { opacity: 0, transform: 'translateY(-28px) scale(0.72)' },
+                    { opacity: 0, transform: 'translateY(-32px) scale(0.72)' },
                     { opacity: 1, transform: 'translateY(0) scale(1)' }
                 ], {
-                    duration: 280,
+                    duration: 240,
                     easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
                     fill: 'both'
                 });
             });
         }
 
-        function calculateMatchGain(matchCount, cascade) {
-            const base = SCORE_TABLE[Math.min(matchCount, 6)] || (SCORE_TABLE[6] + ((matchCount - 6) * 12));
-            return base + (Math.max(0, cascade - 1) * 8);
+        function getBaseGroupScore(length) {
+            if (length <= 3) return 20;
+            if (length === 4) return 34;
+            if (length === 5) return 52;
+            return 70 + ((length - 6) * 14);
+        }
+
+        function calculateMatchGain(groups, cascade) {
+            const groupScore = groups.reduce((sum, group) => sum + getBaseGroupScore(group.length), 0);
+            const multiLineBonus = Math.max(0, groups.length - 1) * 10;
+            return Math.round((groupScore + multiLineBonus) * (1 + ((cascade - 1) * 0.35)));
+        }
+
+        function buildMatchEvent(groups, gain, cascade) {
+            const biggest = Math.max(...groups.map(group => group.length));
+            const lineLabel = groups.length > 1 ? `${groups.length} линии` : `линия из ${biggest}`;
+
+            if (cascade > 1) {
+                return `Каскад x${cascade}: ${lineLabel} дали +${gain} очков. Держи темп и ищи следующее продолжение.`;
+            }
+
+            if (biggest >= 5) {
+                return `Сильный ход: ${lineLabel} принесли +${gain} очков. Такие размены быстрее всего ведут к цели.`;
+            }
+
+            return `${lineLabel} принесла +${gain} очков. Теперь добей поле следующим точным обменом.`;
         }
 
         function updateGameHud() {
@@ -1650,6 +1793,7 @@
             document.querySelectorAll('.hud-box').forEach(node => {
                 node.classList.remove('urgent', 'success');
             });
+
             if (matchState.timer <= 20) {
                 document.getElementById('hudTime').closest('.hud-box')?.classList.add('urgent');
             }
@@ -1669,6 +1813,8 @@
                 setStatusPill(document.getElementById('liveStatusPill'), 'Финальные секунды', 'warning');
             } else if (matchState.busy) {
                 setStatusPill(document.getElementById('liveStatusPill'), 'Каскад в работе', 'live');
+            } else if (matchState.hintMove) {
+                setStatusPill(document.getElementById('liveStatusPill'), 'Подсказка готова', 'ready');
             } else {
                 setStatusPill(document.getElementById('liveStatusPill'), 'Идёт сессия', 'live');
             }
@@ -1677,11 +1823,19 @@
         function renderBoard(options = {}) {
             const { previousPositions = null, animateFresh = false } = options;
             const boardEl = document.getElementById('gameBoard');
-            boardEl.innerHTML = matchState.board.map((row, rowIndex) => row.map((gem, colIndex) => `
-                <button class="gem ${gem.type} ${matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex ? 'selected' : ''}" data-row="${rowIndex}" data-col="${colIndex}" data-gem-id="${gem.id}">
-                    <img class="gem-icon" src="${GEM_META[gem.type].icon}" alt="${GEM_META[gem.type].label}">
-                </button>
-            `).join('')).join('');
+            const hintCells = new Set((matchState.hintMove || []).map(cell => `${cell.row}:${cell.col}`));
+
+            matchState.board = matchState.board.map(row => row.map(gem => gem || createGem()));
+
+            boardEl.innerHTML = matchState.board.map((row, rowIndex) => row.map((gem, colIndex) => {
+                const isSelected = matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex;
+                const isHint = hintCells.has(`${rowIndex}:${colIndex}`);
+                return `
+                    <button class="gem ${gem.type} ${isSelected ? 'selected' : ''} ${isHint ? 'hint' : ''}" data-row="${rowIndex}" data-col="${colIndex}" data-gem-id="${gem.id}">
+                        <img class="gem-icon" src="${GEM_META[gem.type].icon}" alt="${GEM_META[gem.type].label}">
+                    </button>
+                `;
+            }).join('')).join('');
 
             boardEl.querySelectorAll('.gem').forEach(node => {
                 node.addEventListener('click', () => onGemClick(Number(node.dataset.row), Number(node.dataset.col)));
@@ -1698,6 +1852,7 @@
 
         function resetGameState() {
             clearInterval(matchState.intervalId);
+            clearHint();
             matchState = {
                 sessionId: null,
                 board: [],
@@ -1711,7 +1866,9 @@
                 busy: false,
                 lastGain: 0,
                 lastCascade: 1,
-                bestCascade: 1
+                bestCascade: 1,
+                hintMove: null,
+                hintTimeoutId: null
             };
         }
 
@@ -1720,6 +1877,8 @@
         }
 
         function getPossibleMoves(board) {
+            if (!board?.length) return [];
+
             const moves = [];
             for (let row = 0; row < BOARD_SIZE; row++) {
                 for (let col = 0; col < BOARD_SIZE; col++) {
@@ -1730,7 +1889,7 @@
 
                     for (const next of neighbors) {
                         const swapped = swapCells(board, { row, col }, next);
-                        if (findMatches(swapped).length) {
+                        if (collectMatchGroups(swapped).cells.length) {
                             moves.push([{ row, col }, next]);
                         }
                     }
@@ -1742,27 +1901,34 @@
         function reshuffleBoard(board) {
             let copy = board.map(row => [...row]);
             let safe = 0;
+
             do {
-                const flat = copy.flat().sort(() => Math.random() - 0.5);
+                const flat = copy.flat().filter(Boolean).sort(() => Math.random() - 0.5);
                 copy = Array.from({ length: BOARD_SIZE }, (_, row) =>
-                    Array.from({ length: BOARD_SIZE }, (_, col) => flat[row * BOARD_SIZE + col])
+                    Array.from({ length: BOARD_SIZE }, (_, col) => flat[row * BOARD_SIZE + col] || createGem())
                 );
                 safe += 1;
-                if (safe > 30) break;
-            } while (findMatches(copy).length || !getPossibleMoves(copy).length);
+                if (safe > 30) {
+                    return createBoard();
+                }
+            } while (collectMatchGroups(copy).cells.length || !getPossibleMoves(copy).length);
+
             return copy;
         }
 
         async function ensurePlayableBoard() {
             if (getPossibleMoves(matchState.board).length) return;
+
             const previousPositions = captureBoardPositions();
             matchState.board = reshuffleBoard(matchState.board);
             document.getElementById('gameBoardShell').classList.add('shuffling');
             renderBoard({ previousPositions });
-            setGameEvent('Допустимые ходы закончились. Поле пересобрано автоматически.', 'warning');
+            setGameEvent('Допустимые ходы закончились. Поле собрано заново, можно продолжать без паузы.', 'warning');
+            updateGameHud();
             showToast('Поле обновлено', 'Свободных ходов не осталось, поэтому мы автоматически пересобрали поле.');
-            setTimeout(() => document.getElementById('gameBoardShell').classList.remove('shuffling'), 380);
-            await delay(250);
+            setTimeout(() => document.getElementById('gameBoardShell').classList.remove('shuffling'), 420);
+            scheduleHint(1800);
+            await delay(220);
         }
 
         function showScoreBurst(points, combo) {
@@ -1770,7 +1936,7 @@
             burst.className = 'score-burst';
             burst.textContent = combo > 1 ? `+${points} • x${combo}` : `+${points}`;
             document.body.appendChild(burst);
-            setTimeout(() => burst.remove(), 800);
+            setTimeout(() => burst.remove(), 820);
         }
 
         async function resolveMatches(board) {
@@ -1778,44 +1944,44 @@
             let cascade = 0;
 
             while (true) {
-                const matches = findMatches(currentBoard);
-                if (!matches.length) break;
+                const resolution = collectMatchGroups(currentBoard);
+                if (!resolution.cells.length) break;
 
                 cascade += 1;
                 matchState.cascades += 1;
                 matchState.lastCascade = cascade;
                 matchState.bestCascade = Math.max(matchState.bestCascade, cascade);
-                const gain = calculateMatchGain(matches.length, cascade);
+
+                const gain = calculateMatchGain(resolution.groups, cascade);
                 matchState.lastGain = gain;
                 matchState.score += gain;
+                updateGameHud();
                 showScoreBurst(gain, cascade);
-                setGameEvent(
-                    cascade > 1
-                        ? `Каскад x${cascade} принёс +${gain} очков. Продолжай развивать цепочку.`
-                        : `Линия собрана: +${gain} очков. Ищи следующий сильный размен.`,
-                    cascade > 1 ? 'success' : 'neutral'
-                );
-                const matchedIds = matches
-                    .map(match => currentBoard[match.row][match.col]?.id)
+                setGameEvent(buildMatchEvent(resolution.groups, gain, cascade), cascade > 1 ? 'success' : 'neutral');
+
+                const matchedIds = resolution.cells
+                    .map(cell => currentBoard[cell.row][cell.col]?.id)
                     .filter(Boolean);
+
                 matchedIds.forEach(id => {
                     document.querySelector(`.gem[data-gem-id="${id}"]`)?.classList.add('matched');
                 });
-                await delay(190);
+
+                await delay(120);
+
                 const previousPositions = captureBoardPositions();
-                matches.forEach(match => {
-                    currentBoard[match.row][match.col] = null;
-                });
-                currentBoard = collapseBoard(currentBoard);
+                currentBoard = applyGravity(removeMatchedCells(currentBoard, resolution.cells));
+                matchState.board = currentBoard;
                 renderBoard({ previousPositions });
                 updateGameHud();
-                await delay(140);
+                await delay(180);
             }
 
             matchState.board = currentBoard;
             updateGameHud();
             renderBoard();
             await ensurePlayableBoard();
+            scheduleHint();
         }
 
         async function onGemClick(row, col) {
@@ -1825,43 +1991,51 @@
                 return;
             }
 
+            clearHint();
+
             if (!matchState.selected) {
                 matchState.selected = { row, col };
-                setGameEvent('Фишка выбрана. Теперь поменяй её местами с соседней.', 'neutral');
+                setGameEvent('Фишка выбрана. Обменяй её с соседней, чтобы собрать линию.', 'neutral');
                 renderBoard();
+                updateGameHud();
                 return;
             }
 
             const first = matchState.selected;
             const second = { row, col };
+
             if (first.row === second.row && first.col === second.col) {
                 matchState.selected = null;
                 renderBoard();
+                scheduleHint();
                 return;
             }
 
             if (!isAdjacent(first, second)) {
                 matchState.selected = second;
-                setGameEvent('Можно менять местами только соседние фишки.', 'warning');
+                setGameEvent('Обмен работает только по соседним клеткам. Выбери ближайшую фишку.', 'warning');
                 renderBoard();
+                updateGameHud();
                 return;
             }
 
+            const previousPositions = captureBoardPositions();
             const swapped = swapCells(matchState.board, first, second);
-            const matches = findMatches(swapped);
+            const resolution = collectMatchGroups(swapped);
             matchState.selected = null;
 
-            if (!matches.length) {
+            if (!resolution.cells.length) {
                 renderBoard();
                 const selectorA = `.gem[data-row="${first.row}"][data-col="${first.col}"]`;
                 const selectorB = `.gem[data-row="${second.row}"][data-col="${second.col}"]`;
                 document.querySelector(selectorA)?.classList.add('invalid');
                 document.querySelector(selectorB)?.classList.add('invalid');
-                setGameEvent('Этот обмен не дал линию. Попробуй другой соседний ход.', 'warning');
+                setGameEvent('Этот обмен не создал совпадение. Попробуй другой соседний ход.', 'warning');
                 setTimeout(() => {
                     document.querySelector(selectorA)?.classList.remove('invalid');
                     document.querySelector(selectorB)?.classList.remove('invalid');
                 }, 260);
+                scheduleHint(2400);
                 return;
             }
 
@@ -1869,10 +2043,10 @@
             matchState.moves += 1;
             matchState.lastCascade = 1;
             matchState.board = swapped;
-            setGameEvent('Ход принят. Проверяем каскады и добиваем цепочку.', 'neutral');
-            renderBoard({ previousPositions: captureBoardPositions() });
+            setGameEvent('Ход засчитан. Сразу считаем совпадения, очки и каскады.', 'neutral');
+            renderBoard({ previousPositions });
             updateGameHud();
-            await delay(170);
+            await delay(180);
             await resolveMatches(swapped);
             matchState.busy = false;
             updateGameHud();
@@ -1887,18 +2061,23 @@
                 matchState.timer = data.durationSeconds;
                 matchState.active = true;
                 document.getElementById('gameModal').classList.add('show');
-                setGameEvent('Поле собрано. Начинай с поиска 4+ в ряд и готовь каскады.', 'neutral');
+                setGameEvent('Поле готово. Лучший темп дают линии из 4+, каскады и быстрые решения.', 'neutral');
                 updateGameHud();
                 renderBoard({ animateFresh: true });
                 await ensurePlayableBoard();
+                scheduleHint(2800);
 
                 matchState.intervalId = setInterval(() => {
                     matchState.timer -= 1;
-                    if (matchState.timer === 30) {
-                        setGameEvent('Осталось 30 секунд. Ищи быстрые тройки и не теряй темп.', 'warning');
+
+                    if (matchState.timer === 45) {
+                        setGameEvent('45 секунд осталось. Сейчас особенно важны длинные линии и двойные совпадения.', 'warning');
+                    } else if (matchState.timer === 20) {
+                        setGameEvent('Финальный отрезок. Ищи быстрые тройки без паузы между ходами.', 'warning');
                     } else if (matchState.timer === 10) {
-                        setGameEvent('10 секунд. Любой точный ход сейчас на вес золота.', 'warning');
+                        setGameEvent('10 секунд. Доигрывай любой результативный обмен до конца.', 'warning');
                     }
+
                     updateGameHud();
                     if (matchState.timer <= 0) {
                         finishMatch();
@@ -1917,6 +2096,7 @@
             }
 
             clearInterval(matchState.intervalId);
+            clearHint();
             matchState.active = false;
             updateGameHud();
 
@@ -1936,8 +2116,8 @@
                 showToast(
                     data.rewardGranted ? 'Монета заработана' : 'Игра завершена',
                     data.rewardGranted
-                        ? `Ты добрался до 2 000 очков и закрыл сессию на ${matchState.score.toLocaleString('ru-RU')} очках.`
-                        : `Финальный счёт: ${matchState.score.toLocaleString('ru-RU')} очков. Новая попытка откроется завтра.`
+                        ? `Ты закрыл цель и завершил сессию на ${matchState.score.toLocaleString('ru-RU')} очках.`
+                        : `Финальный счёт: ${matchState.score.toLocaleString('ru-RU')} очков. Следующая попытка откроется завтра.`
                 );
             } catch (error) {
                 showToast('Не удалось завершить игру', error.message);
