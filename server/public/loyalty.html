@@ -9,80 +9,200 @@
     <style>
         :root {
             --bg: #050505;
-            --panel: rgba(18, 18, 18, 0.96);
-            --panel-soft: rgba(255, 255, 255, 0.04);
-            --line: rgba(255, 255, 255, 0.09);
-            --line-strong: rgba(242, 145, 0, 0.28);
+            --panel: rgba(16, 16, 16, 0.96);
+            --panel-soft: rgba(255,255,255,0.04);
+            --panel-soft-2: rgba(255,255,255,0.06);
+            --line: rgba(255,255,255,0.08);
+            --line-strong: rgba(242,145,0,0.3);
             --text: #fff;
-            --muted: #9a9a9a;
+            --muted: #9d9d9d;
             --accent: #F29100;
-            --shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+            --accent-soft: rgba(242,145,0,0.16);
+            --success: #78d27f;
+            --danger: #ff7e74;
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
             --brand-font: "Miratrix", "Manrope", sans-serif;
         }
         * { box-sizing: border-box; }
-        body {
+        html, body {
             margin: 0;
-            min-height: 100vh;
-            font-family: "Manrope", sans-serif;
-            color: var(--text);
+            min-height: 100%;
             background:
-                radial-gradient(circle at top, rgba(242,145,0,0.15), transparent 30%),
-                linear-gradient(180deg, #090909 0%, #040404 100%);
+                radial-gradient(circle at top, rgba(242,145,0,0.18), transparent 30%),
+                linear-gradient(180deg, #0a0a0a 0%, #040404 100%);
+            color: var(--text);
+            font-family: "Manrope", sans-serif;
         }
+        body { padding: 0 0 24px; }
         .shell {
-            width: min(100%, 480px);
+            width: min(100%, 520px);
             margin: 0 auto;
-            padding: 18px 14px 40px;
+            padding: 16px 14px 40px;
         }
         .card {
             background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
             border: 1px solid var(--line);
-            border-radius: 24px;
+            border-radius: 26px;
             box-shadow: var(--shadow);
             overflow: hidden;
         }
         .card + .card { margin-top: 14px; }
-        .hero { padding: 20px; background: radial-gradient(circle at top right, rgba(242,145,0,0.22), transparent 34%); }
-        .brand {
+        .hero {
+            padding: 20px;
+            background:
+                radial-gradient(circle at top right, rgba(242,145,0,0.26), transparent 32%),
+                linear-gradient(140deg, rgba(242,145,0,0.07), transparent 55%);
+        }
+        .brand-row {
             display: flex;
+            align-items: flex-start;
             justify-content: space-between;
             gap: 12px;
-            align-items: flex-start;
         }
-        .brand h1 {
+        .eyebrow {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+        }
+        .hero h1 {
             margin: 4px 0 2px;
-            color: var(--accent);
             font-family: var(--brand-font);
-            font-size: 32px;
-            line-height: 0.95;
+            color: var(--accent);
+            font-size: 36px;
+            line-height: 0.9;
             font-weight: 500;
         }
-        .eyebrow, .small-note {
-            font-size: 11px;
-            letter-spacing: 0.1em;
+        .tagline {
+            font-size: 12px;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--muted);
         }
-        .tagline, .copy, .muted {
-            color: rgba(255,255,255,0.88);
-            line-height: 1.55;
-        }
-        .tagline { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-        .copy { margin: 16px 0 0; font-size: 14px; }
-        .section { padding: 18px; }
-        .section-title { margin: 0; font-size: 20px; font-weight: 800; }
-        .section-note { margin-top: 4px; font-size: 12px; color: var(--muted); }
-        .steps, .perks, .reward-list { display: grid; gap: 10px; margin-top: 14px; }
-        .step, .perk, .reward-option {
-            padding: 14px;
-            border: 1px solid var(--line);
+        .level-pill {
+            min-width: 118px;
+            padding: 12px 14px;
             border-radius: 18px;
-            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.05);
+            text-align: right;
         }
-        .step strong, .perk strong, .reward-option strong { display: block; font-size: 14px; }
-        .step span, .perk span, .reward-option span { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+        .level-pill strong {
+            display: block;
+            color: var(--accent);
+            font-size: 14px;
+        }
+        .level-pill span {
+            display: block;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .hero-copy {
+            margin: 16px 0 0;
+            max-width: 36ch;
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.9);
+        }
+        .stats {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .stat {
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+        }
+        .stat .label {
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .stat .value {
+            margin-top: 8px;
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .section { padding: 18px; }
+        .section-title {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+        }
+        .section-note {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 0 14px;
+            margin-top: 14px;
+        }
+        .tab-btn {
+            padding: 12px 14px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+            color: var(--muted);
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent), #ffb347);
+            color: #111;
+            border-color: transparent;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .steps, .perks, .reward-list, .promo-list, .recent-list, .pending-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .item-card, .reward-card, .promo-card, .recent-card, .pending-card {
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: var(--panel-soft);
+            padding: 14px;
+        }
+        .item-card strong, .reward-card strong, .promo-card strong, .recent-card strong, .pending-card strong {
+            display: block;
+            font-size: 14px;
+        }
+        .item-card span, .reward-card span, .promo-card span, .recent-card span, .pending-card span {
+            display: block;
+            margin-top: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .reward-card.selected, .pending-card.active-card, .promo-card.active-card {
+            border-color: var(--line-strong);
+            background: linear-gradient(180deg, rgba(242,145,0,0.12), rgba(255,255,255,0.03));
+        }
         .field { margin-top: 14px; }
-        .field label { display: block; margin-bottom: 8px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
         .input {
             width: 100%;
             padding: 14px 16px;
@@ -100,61 +220,297 @@
             font: inherit;
             font-weight: 800;
             cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
-        .btn-primary { background: linear-gradient(135deg, var(--accent), #ffb347); color: #111; width: 100%; }
-        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--line); width: 100%; }
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
-        .stat {
-            padding: 12px;
+        .btn:active { transform: scale(0.98); }
+        .btn[disabled] { opacity: 0.5; cursor: default; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #ffb347);
+            color: #111;
+            width: 100%;
+        }
+        .btn-secondary {
             border: 1px solid var(--line);
-            border-radius: 18px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            width: 100%;
         }
-        .stat .label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-        .stat .value { margin-top: 8px; font-size: 24px; color: var(--accent); font-weight: 800; line-height: 1; }
-        .progress-rail { margin-top: 12px; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #ffb347 0%, var(--accent) 100%); }
-        .stamps { margin-top: 14px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+        .hidden { display: none !important; }
+        .progress-rail {
+            margin-top: 12px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffb347 0%, var(--accent) 100%);
+            box-shadow: 0 0 18px rgba(242,145,0,0.45);
+        }
+        .stamps {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
         .stamp {
             aspect-ratio: 1;
-            display: grid;
-            place-items: center;
             border-radius: 18px;
             border: 1px solid var(--line);
             background: rgba(255,255,255,0.03);
+            display: grid;
+            place-items: center;
             color: rgba(255,255,255,0.25);
+            font-size: 18px;
         }
         .stamp.active {
             background: rgba(242,145,0,0.14);
             border-color: var(--line-strong);
-            color: #fff0d7;
+            color: #fff3dd;
         }
-        .pill {
-            min-width: 112px;
+        .wheel-stage {
+            margin-top: 16px;
+            position: relative;
+            padding-top: 8px;
+        }
+        .wheel-pointer {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 16px solid transparent;
+            border-right: 16px solid transparent;
+            border-top: 28px solid #fff1c5;
+            z-index: 3;
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.45));
+        }
+        .wheel-shell {
+            width: min(100%, 360px);
+            margin: 0 auto;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            position: relative;
+            background:
+                radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 58%),
+                rgba(255,255,255,0.02);
+            border: 1px solid rgba(242,145,0,0.22);
+            box-shadow: inset 0 0 24px rgba(242,145,0,0.08), 0 18px 40px rgba(0,0,0,0.38);
+            overflow: hidden;
+        }
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            transition: transform 5.4s cubic-bezier(0.12, 0.86, 0.13, 1);
+            transform: rotate(0deg);
+        }
+        .wheel-center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(circle at top, #ffcf74, #d88300);
+            color: #111;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+            border: 4px solid rgba(255,255,255,0.24);
+            text-align: center;
+            font-size: 12px;
+            z-index: 2;
+        }
+        .wheel-meta {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .meta-card {
             border: 1px solid var(--line);
-            border-radius: 16px;
-            background: rgba(255,255,255,0.05);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+            padding: 12px;
+        }
+        .meta-card .label {
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .meta-card .value {
+            margin-top: 8px;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+        .game-card {
+            margin-top: 14px;
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background:
+                radial-gradient(circle at top right, rgba(242,145,0,0.08), transparent 30%),
+                var(--panel-soft);
+            padding: 16px;
+        }
+        .game-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+        .game-goal {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .game-chip {
+            min-width: 88px;
             padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.05);
             text-align: right;
         }
-        .pill strong { display: block; color: var(--accent); }
-        .reward-option.selected {
-            border-color: var(--line-strong);
-            background: rgba(242,145,0,0.12);
+        .game-chip strong {
+            display: block;
+            color: var(--accent);
         }
-        .hidden { display: none !important; }
+        .game-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            background: rgba(0,0,0,0.82);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+        }
+        .game-modal.show { display: flex; }
+        .game-modal-card {
+            width: min(100%, 520px);
+            background: rgba(12,12,12,0.98);
+            border: 1px solid rgba(242,145,0,0.24);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+        .game-hud {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .hud-box {
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+            padding: 12px;
+        }
+        .hud-box span {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+        .hud-box strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 24px;
+            color: var(--accent);
+            line-height: 1;
+        }
+        .board {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+        .gem {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .gem.selected {
+            outline: 2px solid rgba(255,255,255,0.85);
+            outline-offset: 2px;
+        }
+        .gem::before, .gem::after {
+            content: "";
+            position: absolute;
+            inset: 18% 18%;
+            border-radius: 14px;
+        }
+        .gem.ember::before { background: linear-gradient(135deg, #ffb347, #ff6e42); }
+        .gem.smoke::before { background: linear-gradient(135deg, #a2b6ff, #6979d6); }
+        .gem.neon::before { background: linear-gradient(135deg, #a8ff78, #3ad29f); }
+        .gem.velvet::before { background: linear-gradient(135deg, #ff8bd1, #d84f98); }
+        .gem.night::before { background: linear-gradient(135deg, #8f7cff, #4c3fa8); }
+        .gem::after {
+            inset: 30% 30%;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.24);
+        }
+        .game-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .game-actions .btn { flex: 1; }
+        .empty-state {
+            padding: 20px 14px;
+            border-radius: 20px;
+            border: 1px dashed rgba(255,255,255,0.12);
+            color: var(--muted);
+            text-align: center;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
         .toast {
             position: fixed;
             left: 50%;
             top: 16px;
             transform: translateX(-50%) translateY(-120%);
-            width: min(440px, calc(100% - 24px));
+            width: min(460px, calc(100% - 24px));
             padding: 14px 16px;
             border-radius: 18px;
             border: 1px solid rgba(242,145,0,0.35);
             background: rgba(17,17,17,0.98);
             box-shadow: var(--shadow);
             transition: transform 0.25s ease;
+            z-index: 30;
         }
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast strong { display: block; margin-bottom: 6px; }
@@ -163,20 +519,57 @@
 </head>
 <body>
     <div class="toast" id="toast"></div>
-    <main class="shell">
-        <section class="card hero">
-            <div class="brand">
-                <div>
-                    <div class="eyebrow">Telegram mini app</div>
-                    <h1>Не Усложняй</h1>
-                    <div class="tagline">club для своих</div>
+
+    <div class="game-modal" id="gameModal">
+        <div class="game-modal-card">
+            <div class="eyebrow">Match World</div>
+            <h2 class="section-title">Собери 2 000 очков за 2 минуты</h2>
+            <div class="section-note">Играть можно раз в сутки. Если закрываешь цель, получаешь 1 монету на прокрутку колеса.</div>
+
+            <div class="game-hud">
+                <div class="hud-box">
+                    <span>Счёт</span>
+                    <strong id="hudScore">0</strong>
                 </div>
-                <div class="pill">
-                    <strong id="heroLevel">Гость</strong>
-                    <span class="small-note" id="heroLevelNote">ещё немного до next</span>
+                <div class="hud-box">
+                    <span>Время</span>
+                    <strong id="hudTime">2:00</strong>
+                </div>
+                <div class="hud-box">
+                    <span>Цель</span>
+                    <strong id="hudGoal">2000</strong>
                 </div>
             </div>
-            <p class="copy">Лояльность здесь устроена просто: админ подтверждает твой визит вручную, ты получаешь штампы, открываешь награды и качаешь уровень клуба. Чем выше уровень, тем сильнее reward pool и привилегии.</p>
+
+            <div class="progress-rail">
+                <div class="progress-fill" id="matchProgress" style="width:0%"></div>
+            </div>
+
+            <div class="board" id="gameBoard"></div>
+
+            <div class="game-actions">
+                <button class="btn btn-ghost" id="gameExitButton">Выйти</button>
+                <button class="btn btn-primary" id="gameFinishButton">Закончить игру</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="shell">
+        <section class="card hero">
+            <div class="brand-row">
+                <div>
+                    <div class="eyebrow">Telegram mini app</div>
+                    <h1>Не<br>Усложняй</h1>
+                    <div class="tagline">club для своих</div>
+                </div>
+                <div class="level-pill">
+                    <strong id="heroLevel">Гость</strong>
+                    <span id="heroLevelNote">ещё 3 виз. до “Свой”</span>
+                </div>
+            </div>
+
+            <p class="hero-copy">Теперь loyalty не просто считает визиты. Она даёт монеты, колесо призов, матч-игру и живой reward-цикл, в котором хочется возвращаться ещё до следующей награды.</p>
+
             <div class="stats hidden" id="statsBlock">
                 <div class="stat">
                     <div class="label">Штампы</div>
@@ -187,41 +580,42 @@
                     <div class="value" id="visitsCounter">0</div>
                 </div>
                 <div class="stat">
-                    <div class="label">Средний чек</div>
+                    <div class="label">Монеты</div>
+                    <div class="value" id="coinsCounter">0</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Чек</div>
                     <div class="value" id="averageCheck">0₽</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="card section">
-            <h2 class="section-title">Как это работает</h2>
-            <div class="section-note">Сразу объясняем механику, чтобы гость не терялся.</div>
-            <div class="steps">
-                <div class="step">
-                    <strong>1. Заходишь в клуб</strong>
-                    <span>Оставляешь имя и номер телефона. Дальше система узнаёт тебя через Telegram и номер.</span>
-                </div>
-                <div class="step">
-                    <strong>2. Получаешь штампы</strong>
-                    <span>Каждый подтверждённый визит с покупкой даёт 1 штамп. Чек от 5 000 ₽ даёт 2 штампа.</span>
-                </div>
-                <div class="step">
-                    <strong>3. Открываешь награду</strong>
-                    <span>На 6/6 штампов награда открывается автоматически. Ты сам выбираешь её в mini app, админ только списывает на месте.</span>
-                </div>
-                <div class="step">
-                    <strong>4. Качаешь уровень</strong>
-                    <span>Чем выше уровень, тем сильнее привилегии и интереснее reward pool.</span>
                 </div>
             </div>
         </section>
 
         <section class="card section" id="registrationCard">
             <h2 class="section-title">Вступить в клуб</h2>
-            <div class="section-note">После регистрации все визиты и награды будут привязаны к твоему Telegram и номеру телефона.</div>
+            <div class="section-note">После регистрации визиты, монеты, награды уровня, колесо и игра будут жить на твоей стороне в одном mini app.</div>
+
+            <div class="steps">
+                <div class="item-card">
+                    <strong>1. Заходишь в клуб</strong>
+                    <span>Оставляешь имя и номер телефона. Дальше тебя узнаёт Telegram.</span>
+                </div>
+                <div class="item-card">
+                    <strong>2. Получаешь штампы и монеты</strong>
+                    <span>1 визит = 1 штамп и 1 монета. Чек от 5 000 ₽ даёт 2 штампа, но всё равно 1 монету.</span>
+                </div>
+                <div class="item-card">
+                    <strong>3. Крутишь колесо и играешь в Match World</strong>
+                    <span>1 монета = 1 вращение. В матч-игре можно раз в сутки заработать ещё монету.</span>
+                </div>
+                <div class="item-card">
+                    <strong>4. Активируешь только один приз</strong>
+                    <span>Нельзя одновременно держать активным приз уровня и приз из колеса. Это держит механику чистой и понятной.</span>
+                </div>
+            </div>
+
             <div class="field">
                 <label for="displayName">Как тебя зовут</label>
-                <input id="displayName" class="input" placeholder="Например, Максим">
+                <input id="displayName" class="input" placeholder="Например, Farid">
             </div>
             <div class="field">
                 <label for="phoneInput">Телефон</label>
@@ -232,26 +626,89 @@
             </div>
         </section>
 
-        <section class="card section hidden" id="dashboardCard">
-            <h2 class="section-title">Твой прогресс</h2>
+        <section class="tabs hidden" id="tabs">
+            <button class="tab-btn active" data-tab="club">Клуб</button>
+            <button class="tab-btn" data-tab="wheel">Колесо</button>
+            <button class="tab-btn" data-tab="match">Игра</button>
+        </section>
+
+        <section class="card section tab-panel active hidden" id="tab-club">
+            <h2 class="section-title">Твой клубный прогресс</h2>
             <div class="section-note" id="progressNote"></div>
             <div class="progress-rail"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
             <div class="stamps" id="stampGrid"></div>
-        </section>
 
-        <section class="card section hidden" id="rewardCard">
-            <h2 class="section-title">Твоя награда</h2>
-            <div class="section-note" id="rewardNote"></div>
-            <div class="reward-list" id="rewardList"></div>
-            <div class="field hidden" id="rewardButtonWrap">
-                <button class="btn btn-primary" id="selectRewardButton">Подтвердить выбор награды</button>
+            <div class="promo-list" id="activePromotionWrap"></div>
+            <div class="reward-list" id="levelRewardList"></div>
+            <div class="field hidden" id="levelRewardButtonWrap">
+                <button class="btn btn-primary" id="selectLevelRewardButton">Активировать приз уровня</button>
             </div>
+
+            <div class="perks" id="perkList"></div>
         </section>
 
-        <section class="card section hidden" id="perksCard">
-            <h2 class="section-title">Что даёт твой уровень</h2>
-            <div class="section-note">Здесь видно, почему уровень реально важен, а не просто висит бейджем.</div>
-            <div class="perks" id="perkList"></div>
+        <section class="card section tab-panel hidden" id="tab-wheel">
+            <h2 class="section-title">Колесо призов</h2>
+            <div class="section-note">Стилистически за базу взята модель “яркий центр, динамическая прокрутка, короткие призовые сегменты и понятная математика выигрыша”, которую популяризировали крупные marketplace и retail loyalty-продукты. Вращение стоит 1 монету, призы активируются отдельно.</div>
+
+            <div class="wheel-stage">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-shell">
+                    <canvas id="wheelCanvas" width="720" height="720"></canvas>
+                    <div class="wheel-center">spin<br>1 coin</div>
+                </div>
+            </div>
+
+            <div class="wheel-meta">
+                <div class="meta-card">
+                    <div class="label">Монеты</div>
+                    <div class="value" id="wheelCoins">0</div>
+                </div>
+                <div class="meta-card">
+                    <div class="label">Невыбранные выигрыши</div>
+                    <div class="value" id="pendingWheelCount">0</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <button class="btn btn-primary" id="spinWheelButton">Крутить колесо</button>
+            </div>
+
+            <div class="promo-list" id="wheelActivePromo"></div>
+            <div class="pending-list" id="pendingWheelList"></div>
+            <div class="recent-list" id="recentWheelList"></div>
+        </section>
+
+        <section class="card section tab-panel hidden" id="tab-match">
+            <h2 class="section-title">Match World</h2>
+            <div class="section-note">В программах лояльности матч-игры работают лучше всего, когда у них есть короткая сессия, понятная цель и реальная привязка к валюте программы. Здесь у тебя 2 минуты, цель 2 000 очков и награда — 1 монета. Играть можно раз в сутки.</div>
+
+            <div class="game-card">
+                <div class="game-top">
+                    <div class="game-goal">
+                        Собери одинаковые фишки в ряд. За 2 000 очков получаешь 1 монету на прокрутку колеса.
+                    </div>
+                    <div class="game-chip">
+                        <strong id="matchStatusValue">Ready</strong>
+                        <span class="eyebrow">Статус</span>
+                    </div>
+                </div>
+
+                <div class="wheel-meta">
+                    <div class="meta-card">
+                        <div class="label">Цель</div>
+                        <div class="value">2000</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="label">Длительность</div>
+                        <div class="value">2:00</div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <button class="btn btn-primary" id="startMatchButton">Играть сейчас</button>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -260,14 +717,36 @@
         if (tg) {
             tg.ready();
             tg.expand();
-            tg.setHeaderColor('#050505');
-            tg.setBackgroundColor('#050505');
+            try {
+                tg.setHeaderColor('#050505');
+                tg.setBackgroundColor('#050505');
+            } catch (error) {}
         }
 
         const API_BASE = `${window.location.origin}/api/loyalty`;
+        const MATCH_TARGET_SCORE = 2000;
+        const MATCH_DURATION_SECONDS = 120;
+        const GEMS = ['ember', 'smoke', 'neon', 'velvet', 'night'];
+        const BOARD_SIZE = 6;
+
         let session = null;
         let guestState = null;
-        let selectedRewardId = null;
+        let selectedLevelRewardId = null;
+        let currentTab = 'club';
+        let wheelRotation = 0;
+        let spinning = false;
+
+        let matchState = {
+            sessionId: null,
+            board: [],
+            selected: null,
+            score: 0,
+            moves: 0,
+            cascades: 0,
+            timer: MATCH_DURATION_SECONDS,
+            intervalId: null,
+            active: false
+        };
 
         function demoHeaders() {
             const params = new URLSearchParams(window.location.search);
@@ -310,89 +789,223 @@
             toast.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
             toast.classList.add('show');
             clearTimeout(showToast.timer);
-            showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600);
+            showToast.timer = setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        function renderGuest() {
-            if (!guestState) return;
+        function formatMoney(value) {
+            return `${Math.round(value || 0).toLocaleString('ru-RU')}₽`;
+        }
 
+        function formatWheelPrize(prize) {
+            if (!prize) return '';
+            if (prize.prizeType === 'discount_percent') {
+                return `Скидка ${prize.discountPercent}% ${prize.legalLine}`;
+            }
+            if (prize.prizeType === 'discount_fixed') {
+                return `Скидка ${Math.round(prize.discountAmount).toLocaleString('ru-RU')} ₽ ${prize.legalLine}`;
+            }
+            return prize.title;
+        }
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(node => {
+                node.classList.toggle('active', node.dataset.tab === tab);
+            });
+            document.querySelectorAll('.tab-panel').forEach(node => {
+                node.classList.toggle('active', node.id === `tab-${tab}`);
+                node.classList.toggle('hidden', node.id !== `tab-${tab}`);
+            });
+        }
+
+        function renderHero() {
             document.getElementById('statsBlock').classList.remove('hidden');
-            document.getElementById('registrationCard').classList.add('hidden');
-            document.getElementById('dashboardCard').classList.remove('hidden');
-            document.getElementById('rewardCard').classList.remove('hidden');
-            document.getElementById('perksCard').classList.remove('hidden');
-
+            document.getElementById('tabs').classList.remove('hidden');
             document.getElementById('heroLevel').textContent = guestState.level.title;
             document.getElementById('heroLevelNote').textContent = guestState.nextLevel
-                ? `ещё ${guestState.nextLevel.minVisits - guestState.totalVisits} виз. до "${guestState.nextLevel.title}"`
-                : 'максимальный уровень открыт';
+                ? `ещё ${guestState.nextLevel.minVisits - guestState.totalVisits} виз. до “${guestState.nextLevel.title}”`
+                : 'максимум открыт';
 
             document.getElementById('stampCounter').textContent = `${guestState.currentStamps}/6`;
             document.getElementById('visitsCounter').textContent = guestState.totalVisits;
-            document.getElementById('averageCheck').textContent = `${Math.round(guestState.averageCheck).toLocaleString('ru-RU')}₽`;
-            document.getElementById('progressFill').style.width = `${Math.min(guestState.currentStamps, 6) / 6 * 100}%`;
+            document.getElementById('coinsCounter').textContent = guestState.coins;
+            document.getElementById('averageCheck').textContent = formatMoney(guestState.averageCheck);
+        }
+
+        function renderClub() {
             document.getElementById('progressNote').textContent = guestState.reward
-                ? 'Награда уже открыта. Сначала используй её, потом снова собирай следующую.'
+                ? 'Награда уровня уже открыта. Выбирай её, но помни: нельзя одновременно активировать приз уровня и приз из колеса.'
                 : `До следующей награды осталось ${6 - guestState.currentStamps} штамп(а/ов).`;
+            document.getElementById('progressFill').style.width = `${Math.min(guestState.currentStamps, 6) / 6 * 100}%`;
 
             document.getElementById('stampGrid').innerHTML = Array.from({ length: 6 }, (_, index) => `
                 <div class="stamp ${index < guestState.currentStamps ? 'active' : ''}">${index < guestState.currentStamps ? '✦' : '•'}</div>
             `).join('');
 
-            document.getElementById('perkList').innerHTML = guestState.level.perks.map(perk => `
-                <div class="perk">
-                    <strong>${guestState.level.title}</strong>
-                    <span>${perk}</span>
-                </div>
-            `).join('');
+            const activePromotionWrap = document.getElementById('activePromotionWrap');
+            activePromotionWrap.innerHTML = guestState.activePromotion
+                ? `
+                    <div class="promo-card active-card">
+                        <strong>Сейчас активен: ${guestState.activePromotion.title}</strong>
+                        <span>${guestState.activePromotion.subtitle || ''}</span>
+                    </div>
+                `
+                : `
+                    <div class="promo-card">
+                        <strong>Активных призов сейчас нет</strong>
+                        <span>Можно либо активировать награду уровня, либо выбрать и активировать приз из колеса. Одновременно держать оба нельзя.</span>
+                    </div>
+                `;
 
-            renderRewards();
-        }
+            const rewardList = document.getElementById('levelRewardList');
+            const buttonWrap = document.getElementById('levelRewardButtonWrap');
 
-        function renderRewards() {
-            const rewardList = document.getElementById('rewardList');
-            const rewardNote = document.getElementById('rewardNote');
-            const buttonWrap = document.getElementById('rewardButtonWrap');
-            const activeReward = guestState.reward;
-
-            if (!activeReward) {
-                rewardNote.textContent = 'Когда дойдёшь до 6/6 штампов, награда откроется автоматически. Её не нужно вручную активировать у админа.';
+            if (!guestState.reward) {
                 rewardList.innerHTML = guestState.rewardPool.map(reward => `
-                    <div class="reward-option">
+                    <div class="reward-card">
                         <strong>${reward.title}</strong>
                         <span>${reward.description}</span>
                     </div>
                 `).join('');
                 buttonWrap.classList.add('hidden');
-                return;
-            }
-
-            if (activeReward.status === 'available') {
-                rewardNote.textContent = 'Награда уже открыта. Выбери один вариант, а админ потом просто спишет его на месте.';
+            } else if (guestState.reward.status === 'available') {
                 rewardList.innerHTML = guestState.rewardPool.map(reward => `
-                    <div class="reward-option ${selectedRewardId === reward.id ? 'selected' : ''}" data-reward-id="${reward.id}">
+                    <div class="reward-card ${selectedLevelRewardId === reward.id ? 'selected' : ''}" data-level-reward-id="${reward.id}">
                         <strong>${reward.title}</strong>
                         <span>${reward.description}</span>
                     </div>
                 `).join('');
-                buttonWrap.classList.remove('hidden');
-                document.querySelectorAll('[data-reward-id]').forEach(node => {
+
+                document.querySelectorAll('[data-level-reward-id]').forEach(node => {
                     node.addEventListener('click', () => {
-                        selectedRewardId = Number(node.dataset.rewardId);
-                        renderRewards();
+                        selectedLevelRewardId = Number(node.dataset.levelRewardId);
+                        renderClub();
                     });
                 });
-                return;
+                buttonWrap.classList.remove('hidden');
+            } else {
+                rewardList.innerHTML = `
+                    <div class="reward-card selected">
+                        <strong>${guestState.reward.selectedRewardTitle}</strong>
+                        <span>${guestState.reward.description || 'Награда уровня уже активирована и ждёт списания у администратора.'}</span>
+                    </div>
+                `;
+                buttonWrap.classList.add('hidden');
             }
 
-            rewardNote.textContent = 'Награда уже выбрана. На месте просто назови номер телефона, и админ её спишет.';
-            rewardList.innerHTML = `
-                <div class="reward-option selected">
-                    <strong>${activeReward.selectedRewardTitle}</strong>
-                    <span>Награда выбрана и ждёт использования. Срок жизни награды — 14 дней.</span>
+            document.getElementById('perkList').innerHTML = guestState.level.perks.map(perk => `
+                <div class="item-card">
+                    <strong>${guestState.level.title}</strong>
+                    <span>${perk}</span>
                 </div>
-            `;
-            buttonWrap.classList.add('hidden');
+            `).join('');
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const prizes = guestState.wheel.pool;
+            const size = canvas.width;
+            const center = size / 2;
+            const radius = center - 18;
+            ctx.clearRect(0, 0, size, size);
+
+            if (!prizes.length) return;
+
+            const anglePer = (Math.PI * 2) / prizes.length;
+
+            prizes.forEach((prize, index) => {
+                const start = -Math.PI / 2 + index * anglePer;
+                const end = start + anglePer;
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, start, end);
+                ctx.closePath();
+                ctx.fillStyle = prize.segmentColor || (index % 2 === 0 ? '#F29100' : '#d77e00');
+                ctx.fill();
+
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(start + anglePer / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = index % 2 === 0 ? '#131313' : '#fff6df';
+                ctx.font = '700 28px Manrope';
+                ctx.fillText(prize.shortLabel, radius - 40, 10);
+                ctx.restore();
+            });
+
+            ctx.beginPath();
+            ctx.arc(center, center, radius - 12, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+        }
+
+        function renderWheel() {
+            drawWheel();
+            document.getElementById('wheelCoins').textContent = guestState.wheel.coins;
+            document.getElementById('pendingWheelCount').textContent = guestState.wheel.pendingPrizeCount;
+            document.getElementById('spinWheelButton').disabled = spinning || !guestState.wheel.canSpin || !guestState.wheel.pool.length;
+
+            const activeWrap = document.getElementById('wheelActivePromo');
+            activeWrap.innerHTML = guestState.wheel.activePrize
+                ? `
+                    <div class="pending-card active-card">
+                        <strong>Активный приз из колеса: ${guestState.wheel.activePrize.title}</strong>
+                        <span>${formatWheelPrize(guestState.wheel.activePrize)}</span>
+                    </div>
+                `
+                : '';
+
+            const pendingOnly = guestState.wheel.recentPrizes.filter(prize => prize.status === 'won');
+            document.getElementById('pendingWheelList').innerHTML = pendingOnly.length
+                ? pendingOnly.map(prize => `
+                    <div class="pending-card">
+                        <strong>${prize.title}</strong>
+                        <span>${formatWheelPrize(prize)}</span>
+                        <span>Срок жизни: 14 дней. Можно активировать только если сейчас нет активного приза уровня или другого приза из колеса.</span>
+                        <div class="field">
+                            <button class="btn btn-primary activate-wheel-btn" data-wheel-prize-id="${prize.id}" ${guestState.activePromotion ? 'disabled' : ''}>Активировать этот приз</button>
+                        </div>
+                    </div>
+                `).join('')
+                : `
+                    <div class="empty-state">Пока нет невключённых выигрышей. Крути колесо за монеты и собирай новый стек призов.</div>
+                `;
+
+            document.querySelectorAll('.activate-wheel-btn').forEach(node => {
+                node.addEventListener('click', () => activateWheelPrize(Number(node.dataset.wheelPrizeId)));
+            });
+
+            document.getElementById('recentWheelList').innerHTML = guestState.wheel.recentPrizes.length
+                ? guestState.wheel.recentPrizes.map(prize => `
+                    <div class="recent-card">
+                        <strong>${prize.title}</strong>
+                        <span>${formatWheelPrize(prize)} • статус: ${prize.statusLabel}</span>
+                    </div>
+                `).join('')
+                : `<div class="empty-state">История колеса появится после первой прокрутки.</div>`;
+        }
+
+        function renderMatch() {
+            const status = guestState.match.canPlayToday
+                ? 'Доступна'
+                : guestState.match.lastSession?.rewardGranted
+                    ? 'Монета получена'
+                    : 'Попытка сегодня уже была';
+
+            document.getElementById('matchStatusValue').textContent = status;
+            document.getElementById('startMatchButton').disabled = !guestState.match.canPlayToday;
+        }
+
+        function renderGuest() {
+            if (!guestState) return;
+            document.getElementById('registrationCard').classList.add('hidden');
+            renderHero();
+            renderClub();
+            renderWheel();
+            renderMatch();
+            setTab(currentTab);
         }
 
         async function loadSession() {
@@ -412,7 +1025,7 @@
             try {
                 const data = await api(`${API_BASE}/guest/me`);
                 guestState = data.guest;
-                selectedRewardId = null;
+                selectedLevelRewardId = null;
                 renderGuest();
             } catch (error) {
                 showToast('Не удалось загрузить профиль', error.message);
@@ -425,19 +1038,18 @@
             const phone = document.getElementById('phoneInput').value.trim();
 
             if (!displayName || !phone) {
-                showToast('Нужно заполнить данные', 'Без имени и номера телефона мы не сможем корректно привязать визиты и награды.');
+                showToast('Нужно заполнить данные', 'Без имени и номера телефона мы не сможем корректно привязать визиты, монеты и призы.');
                 return;
             }
 
             button.disabled = true;
             button.textContent = 'Подключаем...';
-
             try {
                 await api(`${API_BASE}/guest/register`, {
                     method: 'POST',
                     body: JSON.stringify({ displayName, phone })
                 });
-                showToast('Ты в клубе', 'Регистрация завершена. Теперь все визиты и rewards будут на твоей стороне в одном экране.');
+                showToast('Ты в клубе', 'Регистрация завершена. Теперь можно собирать штампы, монеты, крутить колесо и играть.');
                 await loadGuest();
             } catch (error) {
                 showToast('Регистрация не прошла', error.message);
@@ -447,33 +1059,314 @@
             }
         }
 
-        async function selectReward() {
-            const button = document.getElementById('selectRewardButton');
-            if (!guestState?.reward?.id || !selectedRewardId) {
-                showToast('Выбери награду', 'Сначала выбери один из вариантов reward pool своего уровня.');
+        async function activateLevelReward() {
+            const button = document.getElementById('selectLevelRewardButton');
+            if (!guestState.reward?.id || !selectedLevelRewardId) {
+                showToast('Выбери награду', 'Сначала выбери один из призов уровня.');
                 return;
             }
 
             button.disabled = true;
-            button.textContent = 'Сохраняем...';
-
+            button.textContent = 'Активируем...';
             try {
-                await api(`${API_BASE}/guest/rewards/${guestState.reward.id}/select`, {
+                const data = await api(`${API_BASE}/guest/rewards/${guestState.reward.id}/select`, {
                     method: 'POST',
-                    body: JSON.stringify({ rewardCatalogId: selectedRewardId })
+                    body: JSON.stringify({ rewardCatalogId: selectedLevelRewardId })
                 });
-                showToast('Награда выбрана', 'Отлично. Теперь админ просто спишет её на месте без лишних подтверждений.');
-                await loadGuest();
+                guestState = data.guest;
+                selectedLevelRewardId = null;
+                renderGuest();
+                showToast('Награда уровня активирована', 'Теперь админ сможет списать её на месте.');
             } catch (error) {
-                showToast('Не удалось сохранить выбор', error.message);
+                showToast('Не удалось активировать', error.message);
             } finally {
                 button.disabled = false;
-                button.textContent = 'Подтвердить выбор награды';
+                button.textContent = 'Активировать приз уровня';
+            }
+        }
+
+        async function spinWheel() {
+            if (spinning || !guestState.wheel.canSpin) return;
+            spinning = true;
+            document.getElementById('spinWheelButton').disabled = true;
+
+            try {
+                const data = await api(`${API_BASE}/guest/wheel/spin`, { method: 'POST' });
+                const prizes = guestState.wheel.pool;
+                const matchingIndices = prizes
+                    .map((prize, index) => prize.id === data.prize.id ? index : -1)
+                    .filter(index => index >= 0);
+                const targetIndex = matchingIndices[Math.floor(Math.random() * matchingIndices.length)] || 0;
+                const segmentDeg = 360 / prizes.length;
+                const prizeDeg = (targetIndex * segmentDeg) + segmentDeg / 2;
+                const targetRotation = 360 * 6 + (360 - prizeDeg);
+                wheelRotation += targetRotation;
+                const canvas = document.getElementById('wheelCanvas');
+                canvas.style.transform = `rotate(${wheelRotation}deg)`;
+
+                setTimeout(() => {
+                    guestState = data.guest;
+                    renderHero();
+                    renderWheel();
+                    showToast('Колесо остановилось', `Твой выигрыш: ${data.prize.title}`);
+                    spinning = false;
+                }, 5500);
+            } catch (error) {
+                spinning = false;
+                document.getElementById('spinWheelButton').disabled = false;
+                showToast('Колесо не прокрутилось', error.message);
+            }
+        }
+
+        async function activateWheelPrize(prizeId) {
+            try {
+                const data = await api(`${API_BASE}/guest/wheel/prizes/${prizeId}/activate`, { method: 'POST' });
+                guestState = data.guest;
+                renderGuest();
+                showToast('Приз из колеса активирован', 'Теперь он готов к списанию у администратора.');
+            } catch (error) {
+                showToast('Не удалось активировать приз', error.message);
+            }
+        }
+
+        function randomGem() {
+            return GEMS[Math.floor(Math.random() * GEMS.length)];
+        }
+
+        function createBoard() {
+            const board = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => randomGem()));
+            while (findMatches(board).length) {
+                for (const match of findMatches(board)) {
+                    board[match.row][match.col] = randomGem();
+                }
+            }
+            return board;
+        }
+
+        function findMatches(board) {
+            const matches = [];
+
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                let count = 1;
+                for (let col = 1; col <= BOARD_SIZE; col++) {
+                    const current = board[row][col];
+                    const previous = board[row][col - 1];
+                    if (current && previous && current === previous) {
+                        count += 1;
+                    } else {
+                        if (count >= 3) {
+                            for (let i = 0; i < count; i++) matches.push({ row, col: col - 1 - i });
+                        }
+                        count = 1;
+                    }
+                }
+            }
+
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                let count = 1;
+                for (let row = 1; row <= BOARD_SIZE; row++) {
+                    const current = board[row]?.[col];
+                    const previous = board[row - 1]?.[col];
+                    if (current && previous && current === previous) {
+                        count += 1;
+                    } else {
+                        if (count >= 3) {
+                            for (let i = 0; i < count; i++) matches.push({ row: row - 1 - i, col });
+                        }
+                        count = 1;
+                    }
+                }
+            }
+
+            return matches.filter((item, index, arr) => index === arr.findIndex(other => other.row === item.row && other.col === item.col));
+        }
+
+        function swapCells(board, first, second) {
+            const copy = board.map(row => [...row]);
+            const temp = copy[first.row][first.col];
+            copy[first.row][first.col] = copy[second.row][second.col];
+            copy[second.row][second.col] = temp;
+            return copy;
+        }
+
+        function collapseBoard(board) {
+            const copy = board.map(row => [...row]);
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                const stack = [];
+                for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                    if (copy[row][col]) stack.push(copy[row][col]);
+                }
+                for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                    copy[row][col] = stack[BOARD_SIZE - 1 - row] || randomGem();
+                }
+            }
+            return copy;
+        }
+
+        function isAdjacent(first, second) {
+            return Math.abs(first.row - second.row) + Math.abs(first.col - second.col) === 1;
+        }
+
+        function updateGameHud() {
+            document.getElementById('hudScore').textContent = matchState.score;
+            document.getElementById('hudTime').textContent = `${Math.floor(matchState.timer / 60)}:${String(matchState.timer % 60).padStart(2, '0')}`;
+            document.getElementById('hudGoal').textContent = MATCH_TARGET_SCORE;
+            document.getElementById('matchProgress').style.width = `${Math.min(100, (matchState.score / MATCH_TARGET_SCORE) * 100)}%`;
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('gameBoard');
+            boardEl.innerHTML = matchState.board.map((row, rowIndex) => row.map((gem, colIndex) => `
+                <button class="gem ${gem} ${matchState.selected && matchState.selected.row === rowIndex && matchState.selected.col === colIndex ? 'selected' : ''}" data-row="${rowIndex}" data-col="${colIndex}"></button>
+            `).join('')).join('');
+
+            boardEl.querySelectorAll('.gem').forEach(node => {
+                node.addEventListener('click', () => onGemClick(Number(node.dataset.row), Number(node.dataset.col)));
+            });
+        }
+
+        function resetGameState() {
+            clearInterval(matchState.intervalId);
+            matchState = {
+                sessionId: null,
+                board: [],
+                selected: null,
+                score: 0,
+                moves: 0,
+                cascades: 0,
+                timer: 120,
+                intervalId: null,
+                active: false
+            };
+        }
+
+        async function resolveMatches(board) {
+            let currentBoard = board;
+            let cascade = 0;
+
+            while (true) {
+                const matches = findMatches(currentBoard);
+                if (!matches.length) break;
+
+                cascade += 1;
+                matchState.cascades += 1;
+                matchState.score += (matches.length * 65) + (cascade * 35);
+                matches.forEach(match => {
+                    currentBoard[match.row][match.col] = null;
+                });
+                currentBoard = collapseBoard(currentBoard);
+            }
+
+            matchState.board = currentBoard;
+            updateGameHud();
+            renderBoard();
+        }
+
+        async function onGemClick(row, col) {
+            if (!matchState.active) return;
+
+            if (!matchState.selected) {
+                matchState.selected = { row, col };
+                renderBoard();
+                return;
+            }
+
+            const first = matchState.selected;
+            const second = { row, col };
+            if (first.row === second.row && first.col === second.col) {
+                matchState.selected = null;
+                renderBoard();
+                return;
+            }
+
+            if (!isAdjacent(first, second)) {
+                matchState.selected = second;
+                renderBoard();
+                return;
+            }
+
+            const swapped = swapCells(matchState.board, first, second);
+            const matches = findMatches(swapped);
+            matchState.selected = null;
+
+            if (!matches.length) {
+                renderBoard();
+                return;
+            }
+
+            matchState.moves += 1;
+            await resolveMatches(swapped);
+        }
+
+        async function startMatch() {
+            try {
+                const data = await api(`${API_BASE}/guest/match/start`, { method: 'POST' });
+                resetGameState();
+                matchState.sessionId = data.sessionId;
+                matchState.board = createBoard();
+                matchState.timer = data.durationSeconds;
+                matchState.active = true;
+                document.getElementById('gameModal').classList.add('show');
+                updateGameHud();
+                renderBoard();
+
+                matchState.intervalId = setInterval(() => {
+                    matchState.timer -= 1;
+                    updateGameHud();
+                    if (matchState.timer <= 0) {
+                        finishMatch();
+                    }
+                }, 1000);
+            } catch (error) {
+                showToast('Игра не стартовала', error.message);
+            }
+        }
+
+        async function finishMatch() {
+            if (!matchState.sessionId || !matchState.active) {
+                document.getElementById('gameModal').classList.remove('show');
+                resetGameState();
+                return;
+            }
+
+            clearInterval(matchState.intervalId);
+            matchState.active = false;
+
+            try {
+                const data = await api(`${API_BASE}/guest/match/finish`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        sessionId: matchState.sessionId,
+                        score: matchState.score,
+                        moves: matchState.moves,
+                        cascades: matchState.cascades
+                    })
+                });
+                guestState = data.guest;
+                document.getElementById('gameModal').classList.remove('show');
+                renderGuest();
+                showToast(
+                    data.rewardGranted ? 'Монета заработана' : 'Игра завершена',
+                    data.rewardGranted
+                        ? 'Ты добрался до 2 000 очков и получил 1 монету.'
+                        : 'Сегодня попытка уже использована. Завтра можно зайти за новой монетой.'
+                );
+            } catch (error) {
+                showToast('Не удалось завершить игру', error.message);
+            } finally {
+                resetGameState();
             }
         }
 
         document.getElementById('registerButton').addEventListener('click', registerGuest);
-        document.getElementById('selectRewardButton').addEventListener('click', selectReward);
+        document.getElementById('selectLevelRewardButton').addEventListener('click', activateLevelReward);
+        document.getElementById('spinWheelButton').addEventListener('click', spinWheel);
+        document.getElementById('startMatchButton').addEventListener('click', startMatch);
+        document.getElementById('gameFinishButton').addEventListener('click', finishMatch);
+        document.getElementById('gameExitButton').addEventListener('click', finishMatch);
+        document.querySelectorAll('.tab-btn').forEach(node => {
+            node.addEventListener('click', () => setTab(node.dataset.tab));
+        });
 
         loadSession();
     </script>

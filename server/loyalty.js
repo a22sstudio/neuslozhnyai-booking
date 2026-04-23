@@ -1,14 +1,17 @@
 const crypto = require('crypto');
 
+const MATCH_TARGET_SCORE = 2000;
+const MATCH_DURATION_SECONDS = 120;
+
 const LEVELS = [
   {
     code: 'guest',
     title: 'Гость',
     minVisits: 0,
     perks: [
-      'Старт в клубе и welcome-механика',
-      'Базовый reward pool',
-      'Прозрачный прогресс до первой награды'
+      'Welcome-механика и первый reward pool',
+      'Доступ к колесу призов и монетам',
+      '1 матч-игра в сутки за шанс заработать ещё монету'
     ]
   },
   {
@@ -16,9 +19,9 @@ const LEVELS = [
     title: 'Свой',
     minVisits: 3,
     perks: [
-      'Полный базовый reward pool',
-      'Дневные challenges для ускоренного прогресса',
-      'Персональные предложения без масс-маркета'
+      'Расширенный reward pool по штампам',
+      'Средние призы в колесе и более сильные скидки',
+      'Лучшая конверсия монет в полезные rewards'
     ]
   },
   {
@@ -26,9 +29,9 @@ const LEVELS = [
     title: 'В кругу',
     minVisits: 7,
     perks: [
-      'Расширенный reward pool',
-      'Закрытые rewards для дневных часов',
-      'Больше ценности от каждой награды'
+      'Закрытые prize-сегменты в колесе',
+      'Более заметные fixed-скидки и проценты',
+      'Самый приятный баланс редких и частых призов'
     ]
   },
   {
@@ -36,9 +39,9 @@ const LEVELS = [
     title: 'Легенда',
     minVisits: 12,
     perks: [
-      'Максимальный статус',
-      'Редкие rewards и сюрпризы от команды',
-      'Самый сильный эмоциональный пакет'
+      'Максимальный reward pool',
+      'Доступ к джекпот-призам и сильным скидкам',
+      'Редкие эмоциональные награды и premium-слоты в колесе'
     ]
   }
 ];
@@ -60,6 +63,14 @@ function getNextLevel(visits) {
   return LEVELS.find(level => visits < level.minVisits) || null;
 }
 
+function levelRank(levelCode) {
+  return Math.max(0, LEVELS.findIndex(level => level.code === levelCode));
+}
+
+function allowedLevels(levelCode) {
+  return LEVELS.slice(0, levelRank(levelCode) + 1).map(level => level.code);
+}
+
 function parseCsv(value) {
   return String(value || '')
     .split(',')
@@ -73,6 +84,25 @@ function safeJsonParse(value) {
   } catch (error) {
     return null;
   }
+}
+
+function getMskDateString(date = new Date()) {
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date);
+}
+
+function getMskDateTime(date) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(date));
 }
 
 function verifyTelegramInitData(initData, botToken) {
@@ -172,16 +202,23 @@ async function resolveRequester(req, pool) {
     `, [guest.id, telegramUser.username, telegramUser.first_name, telegramUser.last_name])).rows[0];
   }
 
-  const adminByDb = (await pool.query(`
+  let adminByDb = (await pool.query(`
     SELECT *
     FROM loyalty_admins
     WHERE is_active = true
-      AND (
-        telegram_user_id = $1
-        OR ($2::text IS NOT NULL AND LOWER(telegram_username) = LOWER($2::text))
-      )
+      AND telegram_user_id = $1
     LIMIT 1
-  `, [telegramUser.id, telegramUser.username])).rows[0] || null;
+  `, [telegramUser.id])).rows[0] || null;
+
+  if (!adminByDb && telegramUser.username) {
+    adminByDb = (await pool.query(`
+      SELECT *
+      FROM loyalty_admins
+      WHERE is_active = true
+        AND LOWER(telegram_username) = LOWER($1::text)
+      LIMIT 1
+    `, [telegramUser.username])).rows[0] || null;
+  }
 
   const envAdminIds = parseCsv(process.env.LOYALTY_ADMIN_IDS).map(value => Number(value));
   const envAdminUsernames = parseCsv(process.env.LOYALTY_ADMIN_USERNAMES).map(value => value.toLowerCase());
@@ -203,7 +240,14 @@ async function resolveRequester(req, pool) {
   };
 }
 
-async function getOpenReward(pool, guestId) {
+async function appendAudit(pool, { guestId = null, adminId = null, actionType, actionSummary, metadata = {} }) {
+  await pool.query(`
+    INSERT INTO loyalty_audit_log (guest_id, admin_id, action_type, action_summary, metadata)
+    VALUES ($1, $2, $3, $4, $5::jsonb)
+  `, [guestId, adminId, actionType, actionSummary, JSON.stringify(metadata)]);
+}
+
+async function getOpenLevelReward(pool, guestId) {
   const result = await pool.query(`
     SELECT
       ri.*,
@@ -221,31 +265,257 @@ async function getOpenReward(pool, guestId) {
   return result.rows[0] || null;
 }
 
-async function getRewardPool(pool, levelCode) {
-  const levelIndex = LEVELS.findIndex(level => level.code === levelCode);
-  const allowedLevels = LEVELS.slice(0, levelIndex + 1).map(level => level.code);
+async function getSelectedLevelReward(pool, guestId) {
+  const result = await pool.query(`
+    SELECT
+      ri.*,
+      rc.code as reward_code,
+      rc.title as reward_title,
+      rc.description as reward_description
+    FROM loyalty_reward_instances ri
+    LEFT JOIN loyalty_reward_catalog rc ON rc.id = ri.reward_catalog_id
+    WHERE ri.guest_id = $1
+      AND ri.status = 'selected'
+    ORDER BY ri.id DESC
+    LIMIT 1
+  `, [guestId]);
 
+  return result.rows[0] || null;
+}
+
+async function getRewardPool(pool, levelCode) {
   const result = await pool.query(`
     SELECT id, code, title, description, min_level_code
     FROM loyalty_reward_catalog
     WHERE is_active = true
       AND min_level_code = ANY($1::text[])
     ORDER BY display_order, id
-  `, [allowedLevels]);
+  `, [allowedLevels(levelCode)]);
 
   return result.rows;
 }
 
-async function appendAudit(pool, { guestId = null, adminId = null, actionType, actionSummary, metadata = {} }) {
-  await pool.query(`
-    INSERT INTO loyalty_audit_log (guest_id, admin_id, action_type, action_summary, metadata)
-    VALUES ($1, $2, $3, $4, $5::jsonb)
-  `, [guestId, adminId, actionType, actionSummary, JSON.stringify(metadata)]);
+async function getWheelPrizePool(pool, levelCode) {
+  const result = await pool.query(`
+    SELECT *
+    FROM loyalty_wheel_prize_catalog
+    WHERE is_active = true
+      AND min_level_code = ANY($1::text[])
+    ORDER BY display_order, id
+  `, [allowedLevels(levelCode)]);
+
+  return result.rows;
 }
 
-function formatGuestPayload(guest, reward, rewardPool) {
+async function getActiveWheelPrize(pool, guestId) {
+  const result = await pool.query(`
+    SELECT
+      i.*,
+      c.code,
+      c.title,
+      c.short_label,
+      c.description,
+      c.prize_type,
+      c.discount_percent,
+      c.discount_amount,
+      c.min_order_amount,
+      c.bonus_coins,
+      c.segment_color
+    FROM loyalty_wheel_prize_instances i
+    JOIN loyalty_wheel_prize_catalog c ON c.id = i.prize_catalog_id
+    WHERE i.guest_id = $1
+      AND i.status = 'active'
+    ORDER BY i.id DESC
+    LIMIT 1
+  `, [guestId]);
+
+  return result.rows[0] || null;
+}
+
+async function getRecentWheelPrizes(pool, guestId) {
+  const result = await pool.query(`
+    SELECT
+      i.*,
+      c.code,
+      c.title,
+      c.short_label,
+      c.prize_type,
+      c.discount_percent,
+      c.discount_amount,
+      c.min_order_amount,
+      c.segment_color
+    FROM loyalty_wheel_prize_instances i
+    JOIN loyalty_wheel_prize_catalog c ON c.id = i.prize_catalog_id
+    WHERE i.guest_id = $1
+    ORDER BY i.id DESC
+    LIMIT 8
+  `, [guestId]);
+
+  return result.rows;
+}
+
+async function getPendingWheelCount(pool, guestId) {
+  const result = await pool.query(`
+    SELECT COUNT(*)::int AS count
+    FROM loyalty_wheel_prize_instances
+    WHERE guest_id = $1
+      AND status = 'won'
+  `, [guestId]);
+
+  return result.rows[0]?.count || 0;
+}
+
+async function getMatchMeta(pool, guestId) {
+  const today = getMskDateString();
+  const playedTodayResult = await pool.query(`
+    SELECT *
+    FROM loyalty_match_sessions
+    WHERE guest_id = $1
+      AND (started_at AT TIME ZONE 'Europe/Moscow')::date = $2::date
+    ORDER BY id DESC
+    LIMIT 1
+  `, [guestId, today]);
+
+  const latest = playedTodayResult.rows[0] || null;
+
+  return {
+    canPlayToday: !latest,
+    playedToday: Boolean(latest),
+    lastSession: latest ? {
+      id: latest.id,
+      score: latest.score,
+      rewardGranted: latest.reward_granted,
+      completedAt: latest.completed_at
+    } : null,
+    targetScore: MATCH_TARGET_SCORE,
+    durationSeconds: MATCH_DURATION_SECONDS
+  };
+}
+
+function formatOrderCondition(row) {
+  if (!row.min_order_amount) return 'без минимальной суммы';
+  return `от ${Number(row.min_order_amount).toLocaleString('ru-RU')} ₽`;
+}
+
+function describeWheelPrize(row) {
+  if (!row) return null;
+
+  if (row.prize_type === 'discount_percent') {
+    return `Скидка ${Number(row.discount_percent)}% ${formatOrderCondition(row)}`;
+  }
+
+  if (row.prize_type === 'discount_fixed') {
+    return `Скидка ${Number(row.discount_amount).toLocaleString('ru-RU')} ₽ ${formatOrderCondition(row)}`;
+  }
+
+  if (row.prize_type === 'special') {
+    return row.title;
+  }
+
+  if (row.prize_type === 'bonus_coins') {
+    return `${row.bonus_coins} монет`;
+  }
+
+  return row.title;
+}
+
+function formatWheelPrizeCatalog(row) {
+  return {
+    id: row.id,
+    code: row.code,
+    title: row.title,
+    shortLabel: row.short_label,
+    description: row.description,
+    prizeType: row.prize_type,
+    discountPercent: row.discount_percent ? Number(row.discount_percent) : null,
+    discountAmount: row.discount_amount ? Number(row.discount_amount) : null,
+    minOrderAmount: row.min_order_amount ? Number(row.min_order_amount) : null,
+    bonusCoins: Number(row.bonus_coins || 0),
+    probabilityWeight: Number(row.probability_weight || 0),
+    minLevelCode: row.min_level_code,
+    segmentColor: row.segment_color,
+    legalLine: formatOrderCondition(row)
+  };
+}
+
+function formatWheelPrizeInstance(row) {
+  if (!row) return null;
+
+  const title = row.title || row.reward_title || 'Приз';
+  const statusMap = {
+    won: 'выигран',
+    active: 'активирован',
+    redeemed: 'списан'
+  };
+
+  return {
+    id: row.id,
+    title,
+    shortLabel: row.short_label || title,
+    description: row.description || row.reward_description || '',
+    prizeType: row.prize_type || null,
+    discountPercent: row.discount_percent ? Number(row.discount_percent) : null,
+    discountAmount: row.discount_amount ? Number(row.discount_amount) : null,
+    minOrderAmount: row.min_order_amount ? Number(row.min_order_amount) : null,
+    bonusCoins: Number(row.bonus_coins || 0),
+    segmentColor: row.segment_color || '#F29100',
+    status: row.status,
+    statusLabel: statusMap[row.status] || row.status,
+    expiresAt: row.expires_at,
+    wonAt: row.won_at,
+    activatedAt: row.activated_at,
+    legalLine: formatOrderCondition(row)
+  };
+}
+
+function buildActivePromotion(levelReward, wheelPrize) {
+  if (wheelPrize) {
+    return {
+      source: 'wheel',
+      title: wheelPrize.title,
+      subtitle: describeWheelPrize(wheelPrize),
+      expiresAt: wheelPrize.expires_at,
+      status: wheelPrize.status
+    };
+  }
+
+  if (levelReward && levelReward.status === 'selected') {
+    return {
+      source: 'level',
+      title: levelReward.reward_title,
+      subtitle: levelReward.reward_description,
+      expiresAt: levelReward.expires_at,
+      status: levelReward.status
+    };
+  }
+
+  return null;
+}
+
+async function loadGuestRow(pool, guestId) {
+  return (await pool.query(`
+    SELECT *
+    FROM loyalty_guests
+    WHERE id = $1
+    LIMIT 1
+  `, [guestId])).rows[0] || null;
+}
+
+async function loadGuestDashboard(pool, guestRow) {
+  const guest = typeof guestRow === 'number' ? await loadGuestRow(pool, guestRow) : guestRow;
+  if (!guest) return null;
+
   const level = getLevelByVisits(Number(guest.total_visits || 0));
   const nextLevel = getNextLevel(Number(guest.total_visits || 0));
+  const levelReward = await getOpenLevelReward(pool, guest.id);
+  const selectedLevelReward = levelReward?.status === 'selected' ? levelReward : null;
+  const rewardPool = await getRewardPool(pool, level.code);
+  const wheelPool = await getWheelPrizePool(pool, level.code);
+  const activeWheelPrize = await getActiveWheelPrize(pool, guest.id);
+  const recentWheelPrizes = await getRecentWheelPrizes(pool, guest.id);
+  const pendingWheelCount = await getPendingWheelCount(pool, guest.id);
+  const match = await getMatchMeta(pool, guest.id);
+  const activePromotion = buildActivePromotion(selectedLevelReward, activeWheelPrize);
 
   return {
     id: guest.id,
@@ -255,19 +525,37 @@ function formatGuestPayload(guest, reward, rewardPool) {
     totalVisits: Number(guest.total_visits || 0),
     currentStamps: Number(guest.current_stamps || 0),
     averageCheck: Number(guest.average_check || 0),
+    coins: Number(guest.coins || 0),
+    wheelSpinsCount: Number(guest.wheel_spins_count || 0),
     inactiveDays: guest.last_visit_at
       ? Math.floor((Date.now() - new Date(guest.last_visit_at).getTime()) / (1000 * 60 * 60 * 24))
       : null,
     level,
     nextLevel,
-    reward,
-    rewardPool
+    reward: levelReward ? {
+      id: levelReward.id,
+      status: levelReward.status,
+      expiresAt: levelReward.expires_at,
+      selectedRewardId: levelReward.reward_catalog_id,
+      selectedRewardTitle: levelReward.reward_title,
+      description: levelReward.reward_description
+    } : null,
+    rewardPool,
+    activePromotion,
+    wheel: {
+      coins: Number(guest.coins || 0),
+      canSpin: Number(guest.coins || 0) > 0,
+      pendingPrizeCount: pendingWheelCount,
+      activePrize: formatWheelPrizeInstance(activeWheelPrize),
+      recentPrizes: recentWheelPrizes.map(formatWheelPrizeInstance),
+      pool: wheelPool.map(formatWheelPrizeCatalog)
+    },
+    match
   };
 }
 
 function assertPhone(phone) {
-  const digits = normalizePhone(phone);
-  return digits.length >= 10;
+  return normalizePhone(phone).length >= 10;
 }
 
 async function requireAdmin(req, res, pool) {
@@ -279,7 +567,19 @@ async function requireAdmin(req, res, pool) {
   return requester;
 }
 
-function registerLoyaltyRoutes(app, pool) {
+function pickWeightedPrize(poolItems) {
+  const expandedWeight = poolItems.reduce((sum, item) => sum + Number(item.probability_weight || 0), 0);
+  let cursor = Math.random() * expandedWeight;
+
+  for (const item of poolItems) {
+    cursor -= Number(item.probability_weight || 0);
+    if (cursor <= 0) return item;
+  }
+
+  return poolItems[poolItems.length - 1];
+}
+
+async function registerLoyaltyRoutes(app, pool) {
   app.use('/api/loyalty', (req, res, next) => {
     console.log(`🟠 Loyalty request: ${req.method} ${req.path}`);
     next();
@@ -331,6 +631,7 @@ function registerLoyaltyRoutes(app, pool) {
       `, [phone]);
 
       let guest;
+
       if (existingByPhone.rows[0] && existingByPhone.rows[0].telegram_user_id && Number(existingByPhone.rows[0].telegram_user_id) !== Number(requester.telegramUser.id)) {
         return res.status(409).json({ error: 'Этот номер уже привязан к другому Telegram-аккаунту' });
       }
@@ -388,8 +689,7 @@ function registerLoyaltyRoutes(app, pool) {
         metadata: { telegramUserId: requester.telegramUser.id }
       });
 
-      const rewardPool = await getRewardPool(pool, guest.level_code || getLevelByVisits(0).code);
-      res.json({ guest: formatGuestPayload(guest, null, rewardPool) });
+      res.json({ guest: await loadGuestDashboard(pool, guest) });
     } catch (error) {
       console.error('❌ Loyalty register error:', error);
       console.error('❌ Loyalty register payload:', {
@@ -410,28 +710,11 @@ function registerLoyaltyRoutes(app, pool) {
       if (!requester.telegramUser) {
         return res.status(401).json({ error: 'Не удалось определить пользователя Telegram' });
       }
-
       if (!requester.guest) {
         return res.status(404).json({ error: 'Гость ещё не зарегистрирован в loyalty' });
       }
 
-      const reward = await getOpenReward(pool, requester.guest.id);
-      const level = getLevelByVisits(Number(requester.guest.total_visits || 0));
-      const rewardPool = await getRewardPool(pool, level.code);
-
-      res.json({
-        guest: formatGuestPayload(
-          { ...requester.guest, level_code: level.code },
-          reward ? {
-            id: reward.id,
-            status: reward.status,
-            expiresAt: reward.expires_at,
-            selectedRewardId: reward.reward_catalog_id,
-            selectedRewardTitle: reward.reward_title
-          } : null,
-          rewardPool
-        )
-      });
+      res.json({ guest: await loadGuestDashboard(pool, requester.guest) });
     } catch (error) {
       console.error('❌ Loyalty guest/me error:', error);
       res.status(500).json({ error: 'Ошибка загрузки профиля гостя' });
@@ -447,10 +730,15 @@ function registerLoyaltyRoutes(app, pool) {
 
       const instanceId = Number(req.params.instanceId);
       const rewardCatalogId = Number(req.body.rewardCatalogId);
+      const levelReward = await getOpenLevelReward(pool, requester.guest.id);
+      const activeWheelPrize = await getActiveWheelPrize(pool, requester.guest.id);
 
-      const reward = await getOpenReward(pool, requester.guest.id);
-      if (!reward || reward.id !== instanceId) {
-        return res.status(404).json({ error: 'Активная награда не найдена' });
+      if (!levelReward || levelReward.id !== instanceId) {
+        return res.status(404).json({ error: 'Активная награда уровня не найдена' });
+      }
+
+      if (activeWheelPrize) {
+        return res.status(409).json({ error: 'Сначала используй активированный приз из колеса. Одновременно активировать два приза нельзя.' });
       }
 
       const level = getLevelByVisits(Number(requester.guest.total_visits || 0));
@@ -460,34 +748,277 @@ function registerLoyaltyRoutes(app, pool) {
         return res.status(400).json({ error: 'Эта награда недоступна для текущего уровня' });
       }
 
-      const updated = (await pool.query(`
+      await pool.query(`
         UPDATE loyalty_reward_instances
         SET reward_catalog_id = $2,
             status = 'selected',
             selected_at = NOW(),
             selected_by_guest = true
         WHERE id = $1
-        RETURNING *
-      `, [instanceId, rewardCatalogId])).rows[0];
+      `, [instanceId, rewardCatalogId]);
 
       await appendAudit(pool, {
         guestId: requester.guest.id,
-        actionType: 'reward_selected',
-        actionSummary: `${requester.guest.display_name} выбрал награду "${allowedReward.title}"`,
+        actionType: 'level_reward_selected',
+        actionSummary: `${requester.guest.display_name} активировал награду уровня "${allowedReward.title}"`,
         metadata: { rewardInstanceId: instanceId, rewardCatalogId }
       });
 
-      res.json({
-        reward: {
-          id: updated.id,
-          status: updated.status,
-          selectedRewardId: updated.reward_catalog_id,
-          selectedRewardTitle: allowedReward.title
-        }
-      });
+      res.json({ guest: await loadGuestDashboard(pool, requester.guest.id) });
     } catch (error) {
       console.error('❌ Loyalty reward select error:', error);
       res.status(500).json({ error: 'Ошибка выбора награды' });
+    }
+  });
+
+  app.post('/api/loyalty/guest/wheel/spin', async (req, res) => {
+    try {
+      const requester = await resolveRequester(req, pool);
+      if (!requester.telegramUser || !requester.guest) {
+        return res.status(401).json({ error: 'Доступно только зарегистрированному гостю' });
+      }
+
+      const guest = await loadGuestRow(pool, requester.guest.id);
+      if (Number(guest.coins || 0) < 1) {
+        return res.status(400).json({ error: 'Нужна хотя бы 1 монета для прокрутки колеса' });
+      }
+
+      const level = getLevelByVisits(Number(guest.total_visits || 0));
+      const wheelPool = await getWheelPrizePool(pool, level.code);
+      if (!wheelPool.length) {
+        return res.status(400).json({ error: 'Для текущего уровня сегменты колеса ещё не настроены' });
+      }
+
+      const pickedPrize = pickWeightedPrize(wheelPool);
+
+      const updatedGuest = (await pool.query(`
+        UPDATE loyalty_guests
+        SET coins = GREATEST(coins - 1, 0),
+            wheel_spins_count = wheel_spins_count + 1,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `, [guest.id])).rows[0];
+
+      const spin = (await pool.query(`
+        INSERT INTO loyalty_wheel_spins (guest_id, prize_catalog_id, coin_cost)
+        VALUES ($1, $2, 1)
+        RETURNING *
+      `, [guest.id, pickedPrize.id])).rows[0];
+
+      const prizeInstance = (await pool.query(`
+        INSERT INTO loyalty_wheel_prize_instances (
+          guest_id,
+          wheel_spin_id,
+          prize_catalog_id,
+          status,
+          expires_at,
+          prize_snapshot
+        )
+        VALUES ($1, $2, $3, 'won', NOW() + INTERVAL '14 days', $4::jsonb)
+        RETURNING *
+      `, [
+        guest.id,
+        spin.id,
+        pickedPrize.id,
+        JSON.stringify({
+          title: pickedPrize.title,
+          shortLabel: pickedPrize.short_label,
+          prizeType: pickedPrize.prize_type,
+          discountPercent: pickedPrize.discount_percent,
+          discountAmount: pickedPrize.discount_amount,
+          minOrderAmount: pickedPrize.min_order_amount
+        })
+      ])).rows[0];
+
+      await appendAudit(pool, {
+        guestId: guest.id,
+        actionType: 'wheel_spin',
+        actionSummary: `${guest.display_name} прокрутил колесо и выиграл "${pickedPrize.title}"`,
+        metadata: {
+          wheelSpinId: spin.id,
+          prizeCatalogId: pickedPrize.id,
+          coinSpent: 1
+        }
+      });
+
+      res.json({
+        prize: formatWheelPrizeInstance({ ...prizeInstance, ...pickedPrize }),
+        guest: await loadGuestDashboard(pool, updatedGuest)
+      });
+    } catch (error) {
+      console.error('❌ Loyalty wheel spin error:', error);
+      res.status(500).json({ error: 'Ошибка прокрутки колеса' });
+    }
+  });
+
+  app.post('/api/loyalty/guest/wheel/prizes/:id/activate', async (req, res) => {
+    try {
+      const requester = await resolveRequester(req, pool);
+      if (!requester.telegramUser || !requester.guest) {
+        return res.status(401).json({ error: 'Доступно только зарегистрированному гостю' });
+      }
+
+      const prizeId = Number(req.params.id);
+      const selectedLevelReward = await getSelectedLevelReward(pool, requester.guest.id);
+      const activeWheelPrize = await getActiveWheelPrize(pool, requester.guest.id);
+
+      if (selectedLevelReward) {
+        return res.status(409).json({ error: 'Сначала используй активную награду уровня. Одновременно активировать два приза нельзя.' });
+      }
+
+      if (activeWheelPrize) {
+        return res.status(409).json({ error: 'У тебя уже есть активированный приз из колеса.' });
+      }
+
+      const prizeResult = await pool.query(`
+        SELECT
+          i.*,
+          c.*
+        FROM loyalty_wheel_prize_instances i
+        JOIN loyalty_wheel_prize_catalog c ON c.id = i.prize_catalog_id
+        WHERE i.id = $1
+          AND i.guest_id = $2
+          AND i.status = 'won'
+        LIMIT 1
+      `, [prizeId, requester.guest.id]);
+
+      const prize = prizeResult.rows[0];
+      if (!prize) {
+        return res.status(404).json({ error: 'Выигранный приз не найден или уже активирован' });
+      }
+
+      await pool.query(`
+        UPDATE loyalty_wheel_prize_instances
+        SET status = 'active',
+            activated_at = NOW()
+        WHERE id = $1
+      `, [prizeId]);
+
+      await appendAudit(pool, {
+        guestId: requester.guest.id,
+        actionType: 'wheel_prize_activated',
+        actionSummary: `${requester.guest.display_name} активировал приз колеса "${prize.title}"`,
+        metadata: { prizeInstanceId: prizeId, prizeCatalogId: prize.prize_catalog_id }
+      });
+
+      res.json({ guest: await loadGuestDashboard(pool, requester.guest.id) });
+    } catch (error) {
+      console.error('❌ Loyalty wheel activate error:', error);
+      res.status(500).json({ error: 'Ошибка активации приза' });
+    }
+  });
+
+  app.post('/api/loyalty/guest/match/start', async (req, res) => {
+    try {
+      const requester = await resolveRequester(req, pool);
+      if (!requester.telegramUser || !requester.guest) {
+        return res.status(401).json({ error: 'Доступно только зарегистрированному гостю' });
+      }
+
+      const today = getMskDateString();
+      const alreadyPlayed = (await pool.query(`
+        SELECT id
+        FROM loyalty_match_sessions
+        WHERE guest_id = $1
+          AND (started_at AT TIME ZONE 'Europe/Moscow')::date = $2::date
+        LIMIT 1
+      `, [requester.guest.id, today])).rows[0];
+
+      if (alreadyPlayed) {
+        return res.status(409).json({ error: 'Сегодня матч-игра уже была доступна. Новая попытка откроется завтра.' });
+      }
+
+      const session = (await pool.query(`
+        INSERT INTO loyalty_match_sessions (guest_id, target_score, duration_seconds)
+        VALUES ($1, $2, $3)
+        RETURNING *
+      `, [requester.guest.id, MATCH_TARGET_SCORE, MATCH_DURATION_SECONDS])).rows[0];
+
+      res.json({
+        sessionId: session.id,
+        durationSeconds: MATCH_DURATION_SECONDS,
+        targetScore: MATCH_TARGET_SCORE
+      });
+    } catch (error) {
+      console.error('❌ Loyalty match start error:', error);
+      res.status(500).json({ error: 'Ошибка запуска игры' });
+    }
+  });
+
+  app.post('/api/loyalty/guest/match/finish', async (req, res) => {
+    try {
+      const requester = await resolveRequester(req, pool);
+      if (!requester.telegramUser || !requester.guest) {
+        return res.status(401).json({ error: 'Доступно только зарегистрированному гостю' });
+      }
+
+      const sessionId = Number(req.body.sessionId);
+      const score = Math.max(0, Number(req.body.score || 0));
+      const moves = Math.max(0, Number(req.body.moves || 0));
+      const cascades = Math.max(0, Number(req.body.cascades || 0));
+
+      const sessionResult = await pool.query(`
+        SELECT *
+        FROM loyalty_match_sessions
+        WHERE id = $1
+          AND guest_id = $2
+          AND completed_at IS NULL
+        LIMIT 1
+      `, [sessionId, requester.guest.id]);
+
+      const session = sessionResult.rows[0];
+      if (!session) {
+        return res.status(404).json({ error: 'Игровая сессия не найдена' });
+      }
+
+      const rewardGranted = score >= MATCH_TARGET_SCORE;
+
+      await pool.query(`
+        UPDATE loyalty_match_sessions
+        SET completed_at = NOW(),
+            score = $2,
+            reward_granted = $3,
+            state = $4::jsonb
+        WHERE id = $1
+      `, [
+        sessionId,
+        score,
+        rewardGranted,
+        JSON.stringify({ moves, cascades })
+      ]);
+
+      if (rewardGranted) {
+        await pool.query(`
+          UPDATE loyalty_guests
+          SET coins = coins + 1,
+              last_match_rewarded_on = $2::date,
+              updated_at = NOW()
+          WHERE id = $1
+        `, [requester.guest.id, getMskDateString()]);
+
+        await appendAudit(pool, {
+          guestId: requester.guest.id,
+          actionType: 'match_reward_granted',
+          actionSummary: `${requester.guest.display_name} прошёл матч-игру и получил 1 монету`,
+          metadata: { sessionId, score, moves, cascades }
+        });
+      } else {
+        await appendAudit(pool, {
+          guestId: requester.guest.id,
+          actionType: 'match_finished',
+          actionSummary: `${requester.guest.display_name} завершил матч-игру без награды`,
+          metadata: { sessionId, score, moves, cascades }
+        });
+      }
+
+      res.json({
+        rewardGranted,
+        guest: await loadGuestDashboard(pool, requester.guest.id)
+      });
+    } catch (error) {
+      console.error('❌ Loyalty match finish error:', error);
+      res.status(500).json({ error: 'Ошибка завершения игры' });
     }
   });
 
@@ -507,38 +1038,36 @@ function registerLoyaltyRoutes(app, pool) {
       `);
 
       const guests = [];
-      for (const guest of result.rows) {
-        const reward = await getOpenReward(pool, guest.id);
-        const inactiveDays = guest.last_visit_at
-          ? Math.floor((Date.now() - new Date(guest.last_visit_at).getTime()) / (1000 * 60 * 60 * 24))
-          : 999;
 
+      for (const guest of result.rows) {
+        const dashboard = await loadGuestDashboard(pool, guest);
         const matchesQuery = !query
           || guest.display_name.toLowerCase().includes(query)
           || guest.phone.includes(query)
           || guest.phone_last4.includes(query);
 
         if (!matchesQuery) continue;
-
-        if (filter === 'reward' && !reward) continue;
-        if (filter === 'inactive' && inactiveDays < 53) continue;
-        if (filter === 'day' && !(Number(guest.current_stamps || 0) >= 4 || Number(guest.average_check || 0) < 3000)) continue;
+        if (filter === 'reward' && !dashboard.activePromotion) continue;
+        if (filter === 'inactive' && (dashboard.inactiveDays || 0) < 53) continue;
+        if (filter === 'day' && !(dashboard.currentStamps >= 4 || dashboard.averageCheck < 3000 || dashboard.coins > 0)) continue;
 
         guests.push({
-          id: guest.id,
-          displayName: guest.display_name,
-          phone: guest.phone,
-          phoneLast4: guest.phone_last4,
-          totalVisits: Number(guest.total_visits || 0),
-          currentStamps: Number(guest.current_stamps || 0),
-          averageCheck: Number(guest.average_check || 0),
-          inactiveDays,
-          level: getLevelByVisits(Number(guest.total_visits || 0)),
-          reward: reward ? {
-            id: reward.id,
-            status: reward.status,
-            selectedRewardTitle: reward.reward_title
-          } : null
+          id: dashboard.id,
+          displayName: dashboard.displayName,
+          phone: dashboard.phone,
+          phoneLast4: dashboard.phoneLast4,
+          totalVisits: dashboard.totalVisits,
+          currentStamps: dashboard.currentStamps,
+          averageCheck: dashboard.averageCheck,
+          inactiveDays: dashboard.inactiveDays,
+          coins: dashboard.coins,
+          level: dashboard.level,
+          activePromotion: dashboard.activePromotion,
+          levelReward: dashboard.reward,
+          wheel: {
+            activePrize: dashboard.wheel.activePrize,
+            pendingPrizeCount: dashboard.wheel.pendingPrizeCount
+          }
         });
       }
 
@@ -556,6 +1085,7 @@ function registerLoyaltyRoutes(app, pool) {
 
       const displayName = String(req.body.displayName || '').trim();
       const phone = normalizePhone(req.body.phone);
+
       if (!displayName || !assertPhone(phone)) {
         return res.status(400).json({ error: 'Нужно указать имя и корректный номер' });
       }
@@ -592,13 +1122,14 @@ function registerLoyaltyRoutes(app, pool) {
       const checkAmount = Number(req.body.checkAmount || 0);
       const comment = String(req.body.comment || '').trim();
 
-      const guestResult = await pool.query(`SELECT * FROM loyalty_guests WHERE id = $1 LIMIT 1`, [guestId]);
-      const guest = guestResult.rows[0];
-      if (!guest) return res.status(404).json({ error: 'Гость не найден' });
+      const guest = await loadGuestRow(pool, guestId);
+      if (!guest) {
+        return res.status(404).json({ error: 'Гость не найден' });
+      }
 
-      const openReward = await getOpenReward(pool, guest.id);
+      const openLevelReward = await getOpenLevelReward(pool, guest.id);
       const stampsAwarded = checkAmount >= 5000 ? 2 : 1;
-      const appliedStamps = openReward ? 0 : stampsAwarded;
+      const appliedStamps = openLevelReward ? 0 : stampsAwarded;
 
       const visit = (await pool.query(`
         INSERT INTO loyalty_visits (guest_id, confirmed_by_admin_id, check_amount, stamps_awarded, comment)
@@ -613,21 +1144,21 @@ function registerLoyaltyRoutes(app, pool) {
         : ((Number(guest.average_check || 0) * Number(guest.total_visits || 0)) + checkAmount) / totalVisits;
       const level = getLevelByVisits(totalVisits);
 
-      const updatedGuest = (await pool.query(`
+      await pool.query(`
         UPDATE loyalty_guests
         SET total_visits = $2,
             current_stamps = $3,
             average_check = $4,
             level_code = $5,
+            coins = coins + 1,
             last_visit_at = NOW(),
             last_seen_at = NOW(),
             updated_at = NOW()
         WHERE id = $1
-        RETURNING *
-      `, [guest.id, totalVisits, currentStamps, averageCheck, level.code])).rows[0];
+      `, [guest.id, totalVisits, currentStamps, averageCheck, level.code]);
 
       let openedReward = null;
-      if (!openReward && currentStamps >= 6) {
+      if (!openLevelReward && currentStamps >= 6) {
         openedReward = (await pool.query(`
           INSERT INTO loyalty_reward_instances (guest_id, status, expires_at, opened_after_visit_id)
           VALUES ($1, 'available', NOW() + INTERVAL '14 days', $2)
@@ -644,20 +1175,18 @@ function registerLoyaltyRoutes(app, pool) {
           checkAmount,
           stampsAwarded,
           appliedStamps,
+          coinsGranted: 1,
           rewardOpened: Boolean(openedReward)
         }
       });
 
       res.json({
-        guest: updatedGuest,
-        visit,
-        rewardOpened: Boolean(openedReward),
-        rewardLocked: Boolean(openReward),
-        message: openReward
-          ? 'Визит зафиксирован, но штампы не добавлены: сначала нужно использовать текущую награду.'
+        guest: await loadGuestDashboard(pool, guest.id),
+        message: openLevelReward
+          ? 'Визит зафиксирован, монета начислена, но штампы не добавлены: сначала нужно использовать текущую награду уровня.'
           : openedReward
-            ? 'Визит подтверждён, новая награда открыта автоматически.'
-            : 'Визит подтверждён.'
+            ? 'Визит подтверждён, монета начислена, новая награда уровня открыта автоматически.'
+            : 'Визит подтверждён, монета начислена.'
       });
     } catch (error) {
       console.error('❌ Loyalty admin visit error:', error);
@@ -682,13 +1211,13 @@ function registerLoyaltyRoutes(app, pool) {
         JOIN loyalty_guests g ON g.id = ri.guest_id
         LEFT JOIN loyalty_reward_catalog rc ON rc.id = ri.reward_catalog_id
         WHERE ri.id = $1
-          AND ri.status IN ('available', 'selected')
+          AND ri.status = 'selected'
         LIMIT 1
       `, [rewardId]);
 
       const reward = rewardResult.rows[0];
       if (!reward) {
-        return res.status(404).json({ error: 'Награда не найдена или уже списана' });
+        return res.status(404).json({ error: 'Награда уровня не найдена или уже списана' });
       }
 
       await pool.query(`
@@ -709,19 +1238,64 @@ function registerLoyaltyRoutes(app, pool) {
       await appendAudit(pool, {
         guestId: reward.guest_id,
         adminId: requester.admin?.id || null,
-        actionType: 'reward_redeemed',
-        actionSummary: `Списана награда гостя ${reward.display_name}`,
-        metadata: {
-          rewardId,
-          rewardTitle: reward.reward_title,
-          comment
-        }
+        actionType: 'level_reward_redeemed',
+        actionSummary: `Списана награда уровня гостя ${reward.display_name}`,
+        metadata: { rewardId, rewardTitle: reward.reward_title, comment }
       });
 
-      res.json({ success: true });
+      res.json({ success: true, guest: await loadGuestDashboard(pool, reward.guest_id) });
     } catch (error) {
-      console.error('❌ Loyalty admin redeem error:', error);
-      res.status(500).json({ error: 'Ошибка списания награды' });
+      console.error('❌ Loyalty admin level redeem error:', error);
+      res.status(500).json({ error: 'Ошибка списания награды уровня' });
+    }
+  });
+
+  app.post('/api/loyalty/admin/wheel-prizes/:id/redeem', async (req, res) => {
+    try {
+      const requester = await requireAdmin(req, res, pool);
+      if (!requester) return;
+
+      const prizeId = Number(req.params.id);
+      const comment = String(req.body.comment || '').trim();
+
+      const prizeResult = await pool.query(`
+        SELECT
+          i.*,
+          g.display_name,
+          c.title
+        FROM loyalty_wheel_prize_instances i
+        JOIN loyalty_guests g ON g.id = i.guest_id
+        JOIN loyalty_wheel_prize_catalog c ON c.id = i.prize_catalog_id
+        WHERE i.id = $1
+          AND i.status = 'active'
+        LIMIT 1
+      `, [prizeId]);
+
+      const prize = prizeResult.rows[0];
+      if (!prize) {
+        return res.status(404).json({ error: 'Активный приз из колеса не найден' });
+      }
+
+      await pool.query(`
+        UPDATE loyalty_wheel_prize_instances
+        SET status = 'redeemed',
+            redeemed_at = NOW(),
+            admin_comment = $2
+        WHERE id = $1
+      `, [prizeId, comment || null]);
+
+      await appendAudit(pool, {
+        guestId: prize.guest_id,
+        adminId: requester.admin?.id || null,
+        actionType: 'wheel_prize_redeemed',
+        actionSummary: `Списан приз колеса гостя ${prize.display_name}`,
+        metadata: { prizeId, prizeTitle: prize.title, comment }
+      });
+
+      res.json({ success: true, guest: await loadGuestDashboard(pool, prize.guest_id) });
+    } catch (error) {
+      console.error('❌ Loyalty admin wheel redeem error:', error);
+      res.status(500).json({ error: 'Ошибка списания приза колеса' });
     }
   });
 
@@ -739,7 +1313,7 @@ function registerLoyaltyRoutes(app, pool) {
         LEFT JOIN loyalty_guests g ON g.id = l.guest_id
         LEFT JOIN loyalty_admins a ON a.id = l.admin_id
         ORDER BY l.created_at DESC
-        LIMIT 50
+        LIMIT 80
       `);
 
       res.json({
@@ -750,6 +1324,7 @@ function registerLoyaltyRoutes(app, pool) {
           guestName: item.display_name,
           adminName: item.admin_name,
           createdAt: item.created_at,
+          createdAtLabel: getMskDateTime(item.created_at),
           metadata: item.metadata
         }))
       });

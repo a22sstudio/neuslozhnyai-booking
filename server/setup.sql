@@ -242,3 +242,149 @@ WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'secret_posi
 INSERT INTO loyalty_reward_catalog (code, title, description, min_level_code, display_order)
 SELECT 'legend_surprise', 'Сюрприз от команды', 'Редкая статусная награда только для уровня "Легенда".', 'legend', 7
 WHERE NOT EXISTS (SELECT 1 FROM loyalty_reward_catalog WHERE code = 'legend_surprise');
+
+ALTER TABLE loyalty_guests
+ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 0;
+
+ALTER TABLE loyalty_guests
+ADD COLUMN IF NOT EXISTS wheel_spins_count INTEGER DEFAULT 0;
+
+ALTER TABLE loyalty_guests
+ADD COLUMN IF NOT EXISTS last_match_rewarded_on DATE;
+
+CREATE TABLE IF NOT EXISTS loyalty_wheel_prize_catalog (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  title VARCHAR(150) NOT NULL,
+  short_label VARCHAR(50) NOT NULL,
+  description TEXT,
+  prize_type VARCHAR(20) NOT NULL DEFAULT 'discount_percent',
+  discount_percent DECIMAL(5,2),
+  discount_amount DECIMAL(10,2),
+  min_order_amount DECIMAL(10,2),
+  bonus_coins INTEGER DEFAULT 0,
+  probability_weight INTEGER NOT NULL DEFAULT 1,
+  min_level_code VARCHAR(20) NOT NULL DEFAULT 'guest',
+  segment_color VARCHAR(20) DEFAULT '#F29100',
+  is_active BOOLEAN DEFAULT true,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_wheel_spins (
+  id SERIAL PRIMARY KEY,
+  guest_id INTEGER NOT NULL REFERENCES loyalty_guests(id) ON DELETE CASCADE,
+  prize_catalog_id INTEGER REFERENCES loyalty_wheel_prize_catalog(id),
+  coin_cost INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_wheel_prize_instances (
+  id SERIAL PRIMARY KEY,
+  guest_id INTEGER NOT NULL REFERENCES loyalty_guests(id) ON DELETE CASCADE,
+  wheel_spin_id INTEGER REFERENCES loyalty_wheel_spins(id) ON DELETE SET NULL,
+  prize_catalog_id INTEGER NOT NULL REFERENCES loyalty_wheel_prize_catalog(id),
+  status VARCHAR(20) NOT NULL DEFAULT 'won',
+  won_at TIMESTAMP DEFAULT NOW(),
+  activated_at TIMESTAMP,
+  redeemed_at TIMESTAMP,
+  expires_at TIMESTAMP NOT NULL,
+  admin_comment TEXT,
+  prize_snapshot JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_match_sessions (
+  id SERIAL PRIMARY KEY,
+  guest_id INTEGER NOT NULL REFERENCES loyalty_guests(id) ON DELETE CASCADE,
+  started_at TIMESTAMP DEFAULT NOW(),
+  completed_at TIMESTAMP,
+  score INTEGER DEFAULT 0,
+  target_score INTEGER DEFAULT 2000,
+  duration_seconds INTEGER DEFAULT 120,
+  reward_granted BOOLEAN DEFAULT false,
+  state JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_loyalty_wheel_spins_guest_id ON loyalty_wheel_spins(guest_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_wheel_prize_instances_guest_status ON loyalty_wheel_prize_instances(guest_id, status);
+CREATE INDEX IF NOT EXISTS idx_loyalty_match_sessions_guest_id ON loyalty_match_sessions(guest_id);
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_5_percent', 'Скидка 5% от 1 500 ₽', '5%', 'Мягкий частый приз с безопасной экономикой.', 'discount_percent', 5, NULL,
+  1500, 24, 'guest', '#A96C18', 1
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_5_percent');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_7_percent', 'Скидка 7% от 1 800 ₽', '7%', 'Частый приз для ощущения реальной выгоды без сильного давления на маржу.', 'discount_percent', 7, NULL,
+  1800, 18, 'guest', '#C27D1C', 2
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_7_percent');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_300_fix', 'Скидка 300 ₽ от 2 500 ₽', '300₽', 'Простой фиксированный приз для понятного восприятия.', 'discount_fixed', NULL, 300,
+  2500, 14, 'svoy', '#D88A1E', 3
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_300_fix');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_10_percent', 'Скидка 10% от 3 000 ₽', '10%', 'Средний приз для частых гостей.', 'discount_percent', 10, NULL,
+  3000, 10, 'svoy', '#E59B2C', 4
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_10_percent');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_400_fix', 'Скидка 400 ₽ от 3 500 ₽', '400₽', 'Хороший приз среднего веса.', 'discount_fixed', NULL, 400,
+  3500, 8, 'svoy', '#EEA731', 5
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_400_fix');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_12_percent', 'Скидка 12% от 4 000 ₽', '12%', 'Более заметная награда для уровня "В кругу".', 'discount_percent', 12, NULL,
+  4000, 6, 'circle', '#F1B236', 6
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_12_percent');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_500_fix', 'Скидка 500 ₽ от 4 500 ₽', '500₽', 'Редкий prize для более высоких чеков.', 'discount_fixed', NULL, 500,
+  4500, 5, 'circle', '#F4BF49', 7
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_500_fix');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_15_percent', 'Скидка 15% от 5 000 ₽', '15%', 'Сильный редкий prize для статуса "Легенда".', 'discount_percent', 15, NULL,
+  5000, 3, 'legend', '#F8CA58', 8
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_15_percent');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_700_fix', 'Скидка 700 ₽ от 6 000 ₽', '700₽', 'Редкий фиксированный приз с высокой минимальной суммой.', 'discount_fixed', NULL, 700,
+  6000, 2, 'legend', '#FFD775', 9
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_700_fix');
+
+INSERT INTO loyalty_wheel_prize_catalog (
+  code, title, short_label, description, prize_type, discount_percent, discount_amount,
+  min_order_amount, probability_weight, min_level_code, segment_color, display_order
+)
+SELECT 'wheel_express', 'Экспресс кальян на электронной чаше Хука Про от 5 500 ₽', 'Хука', 'Самый редкий эмоциональный джекпот в колесе.', 'special', NULL, NULL,
+  5500, 1, 'legend', '#FFF1B8', 10
+WHERE NOT EXISTS (SELECT 1 FROM loyalty_wheel_prize_catalog WHERE code = 'wheel_express');
